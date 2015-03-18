@@ -13,13 +13,14 @@ public class TranslationUtil {
 	 * download specific version files
 	 * 
 	 */
-	public static void downloadPreviousCodes(String commitId){
+	public static void downloadPreviousCodes(String gitUrl, String commitId){
 		
 	}
 	/**
 	 * download latest necessary files, including metaData.json
 	 */
 	public static MetaData downloadLatestCodes(String gitUrl){
+		
 		return new MetaData();
 	}
 	public static Map<String, String> readJSON(String jsonFilePath){
