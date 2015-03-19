@@ -1,6 +1,9 @@
 package storage.tools_i18n;
 
+import java.util.logging.Logger;
+
 public class MetaData {
+	private static Logger log = Logger.getLogger(MetaData.class.getName());
 	
 	public static final String META_LAST_TRANSLATED_COMMIT_ID="last.translated.commit.id";
 	public static final String META_CURRENT_COMMIT_ID="current.commit.id";
@@ -12,6 +15,9 @@ public class MetaData {
 	private String createDate;
 	private String createdBy;
 	public String getLastTranslatedCommitId() {
+		if(lastTranslatedCommitId==null || "".equals(lastTranslatedCommitId.trim())){
+			log.warning("Last Apply Translation CommitID not found, no previous codes will download!");
+		}
 		return lastTranslatedCommitId;
 	}
 	public void setLastTranslatedCommitId(String lastTranslatedCommitId) {

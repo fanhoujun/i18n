@@ -22,11 +22,11 @@ public class Message {
 	private String modifiedEnVal;
 
 	public Message(String key, String enVal) {
-		new Message(key, enVal, null);
+		this(key, enVal, null);
 	}
 	
 	public Message(String key, String enVal, Map<String, String> languagesVal) {
-		new Message(key, enVal, languagesVal, null);
+		this(key, enVal, languagesVal, null);
 	}
 
 	public Message(String key, String enVal, Map<String, String> languagesVal, String modifiedEnVal) {
