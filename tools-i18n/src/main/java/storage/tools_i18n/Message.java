@@ -21,6 +21,9 @@ public class Message {
 	 */
 	private String modifiedEnVal;
 
+	public Message() {
+	}
+	
 	public Message(String key, String enVal) {
 		this(key, enVal, null);
 	}

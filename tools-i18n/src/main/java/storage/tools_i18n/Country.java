@@ -5,9 +5,9 @@ import java.util.List;
 
 public enum Country {
 	
-	ENGLISH("UK ENGLISH", "en"), ENGLISH_US("US - ENGLISH", "en-us"), 
+	ENGLISH_UK("UK ENGLISH", "en-uk"), ENGLISH("US - ENGLISH", "en"), 
 	//JAPANESE("JAPANESE", "ja"), ITALIAN("ITALIAN", "it"),
-	FRENCH("FRANCE-FRENCH", "fr-fr"), GERMAN("GERMAN", "de"), SPANISH("SPANISH", "es");
+	FRENCH("FRANCE - FRENCH", "fr-fr"), GERMAN("GERMAN", "de"), SPANISH("SPANISH", "es");
 	
 	private Country(String ctryName, String countryCode){
 		this.counrtyCode=countryCode;

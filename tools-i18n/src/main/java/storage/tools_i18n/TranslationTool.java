@@ -17,56 +17,7 @@ public class TranslationTool {
 	private static List<Country> supportedOtherCountries= Country.otherCountries();
 	
 	public static void main(String[] args) {
-			List<Message> modifiedMessages = new ArrayList<Message>(), 
-					newMessages = new ArrayList<Message>() ,
-					deletedMessages = new ArrayList<Message>(), 
-					noChangeMessages = new ArrayList<Message>();
-			for(int i=0;i<10;i++){
-				Message msg = new Message("M00"+i, "MV00MV"+i);
-				msg.setModifiedEnVal("MV2"+i+"MV");
-				
-				Map<String, String> languagesVal = new HashMap<String, String>();
-				for(Country country : Country.values()){
-					languagesVal.put(country.getCounrtyCode(), "MV200"+country.getCounrtyCode());
-				}
-				msg.setLanguagesVal(languagesVal);
-				modifiedMessages.add(msg);
-			}
 			
-			for(int i=0;i<10;i++){
-				Message msg = new Message("N00"+i, "New00MV"+i);
-				newMessages.add(msg);
-			}
-			
-			for(int i=0;i<10;i++){
-				Message msg = new Message("D00"+i, "DV00MV"+i);
-				
-				Map<String, String> languagesVal = new HashMap<String, String>();
-				for(Country country : Country.values()){
-					languagesVal.put(country.getCounrtyCode(), "DE200"+country.getCounrtyCode());
-				}
-				msg.setLanguagesVal(languagesVal);
-				deletedMessages.add(msg);
-			}
-			for(int i=0;i<10;i++){
-				Message msg = new Message("NoC00"+i, "Noc00MV"+i);
-				
-				Map<String, String> languagesVal = new HashMap<String, String>();
-				for(Country country : Country.values()){
-					languagesVal.put(country.getCounrtyCode(), "Noc00"+country.getCounrtyCode());
-				}
-				msg.setLanguagesVal(languagesVal);
-				noChangeMessages.add(msg);
-			}
-			
-			MetaData metaData = new MetaData();
-			metaData.setCreateDate(new SimpleDateFormat("dd MMM yyyy HH:mm", Locale.ENGLISH).format(new Date()));
-			metaData.setCreatedBy("bhu@hp.com");
-			metaData.setCurrentCommitId("cxfdsafasdfasdfdas");
-			metaData.setLastTranslatedCommitId("lastdafdasfasdkfsdakfa");
-			TranslationUtil.generateNeedTranslateExcel(Constant.EXPORT_EXCEL_NAME, 
-					Constant.SHEET_STORAGE, 
-					modifiedMessages, newMessages, deletedMessages, noChangeMessages, metaData);
 	}
 	
 	public static void exportNeedTranslatedExcel(String filePath) throws IOException{
@@ -135,13 +86,7 @@ public class TranslationTool {
 			if(survivedKeys.containsKey(key)){
 				Map<String, String> translatedValues = translation.getLanguagesVal();
 				for(String languageCode : translatedValues.keySet()){
-					Map<String, String> selectedCountryTranslation= otherLanguagesPreviousTranslatedPair.get(languageCode);
-					if(selectedCountryTranslation==null){
-						log.log(Level.WARNING, "locale_"+languageCode+".json not fount, one more supported language might in the spreadsheet");
-						selectedCountryTranslation = new HashMap<String, String>();
-					}
-					selectedCountryTranslation.put(key, translatedValues.get(key));
-					otherLanguagesPreviousTranslatedPair.put(languageCode, selectedCountryTranslation);
+					otherLanguagesPreviousTranslatedPair.get(languageCode).put(key, translatedValues.get(key));
 				}
 			}
 		}
@@ -232,12 +177,12 @@ public class TranslationTool {
 		return survivedKeys;
 	}
 	
-	private static NeedTranslationModel prepareNeedTranslationData( Map<String, String> oldEnPair, 
+	public static NeedTranslationModel prepareNeedTranslationData( Map<String, String> oldEnPair, 
 			Map<String, String> englishPair, Map<String, Map<String, String>> otherLanguagesPreviousTranslatedPair){
 		log.log(Level.INFO, "Start preparing need translation data......");
 		
 		Map<String, String> nonEnglishLocalePair = checkFileConsistent(otherLanguagesPreviousTranslatedPair);
-		log.log(Level.INFO, "\t Calculate not changed, modified, deleted, added messages......");
+		log.log(Level.INFO, "\t Calculating not changed, modified, deleted, added messages......");
 		List<Message> modifiedMessages = new ArrayList<Message>(), newMessages = new ArrayList<Message>() ,deletedMessages = new ArrayList<Message>(), noChangeMessages = new ArrayList<Message>();
 		
 		for(String key : oldEnPair.keySet()){
@@ -248,11 +193,14 @@ public class TranslationTool {
 			boolean translatedBefore = nonEnglishLocalePair.containsKey(key); // key translated before 
 			if(translatedBefore){
 				for(Country country : Country.values()){
-					String value = otherLanguagesPreviousTranslatedPair.get(country.getCounrtyCode()).get(key);
-					if(value==null){
+					Map<String, String> localTranslated = otherLanguagesPreviousTranslatedPair.get(country.getCounrtyCode());
+					String translatedValue="";
+					if(localTranslated!=null && translatedValue!=null){
+						translatedValue = localTranslated.get(key);
+					}else{
 						log.log(Level.WARNING, "Translation of Key "+key+" not founded due to the previous reason: Keys between different locale files not equals");
 					}
-					languagesVal.put(country.getCounrtyCode(), value);
+					languagesVal.put(country.getCounrtyCode(), translatedValue);
 				}
 			}
 			
@@ -260,7 +208,7 @@ public class TranslationTool {
 			if(containsInCurrentVersion){
 				if(translatedBefore){
 					if(previousEnValue.equals(currentEnValue)){ 
-						noChangeMessages.add(new Message(key, currentEnValue, languagesVal));// no changed messages
+						noChangeMessages.add(new Message(key, previousEnValue, languagesVal));// no changed messages
 					}else{
 						modifiedMessages.add(new Message(key, previousEnValue, languagesVal, currentEnValue)); // modified
 					}
@@ -268,7 +216,7 @@ public class TranslationTool {
 					newMessages.add(new Message(key, currentEnValue));
 				}
 			}else if(translatedBefore){
-				deletedMessages.add(new Message(key, currentEnValue, languagesVal));
+				deletedMessages.add(new Message(key, previousEnValue, languagesVal));
 			}else{
 				log.log(Level.WARNING, "Translation Key: "+key+"="+previousEnValue+" added after applying translation data last time and then deleted now. It would not displayed in the generated spreadsheet.");
 			}
@@ -285,13 +233,14 @@ public class TranslationTool {
 		return new NeedTranslationModel(modifiedMessages,newMessages,deletedMessages,noChangeMessages);
 	}
 
-	private static Map<String, String> checkFileConsistent(Map<String, Map<String, String>> otherLanguagesPreviousTranslatedPair) {
+	public static Map<String, String> checkFileConsistent(Map<String, Map<String, String>> otherLanguagesPreviousTranslatedPair) {
 		log.log(Level.INFO, "\t Checking all the locale except English if the are consistent......");
 		boolean setDefault=false; String nonEnglishLocale="";
 		Map<String, String> nonEnglishLocalePair = new HashMap<String, String>();
 		for(String key : otherLanguagesPreviousTranslatedPair.keySet()){
 			Map<String, String> pairs = otherLanguagesPreviousTranslatedPair.get(key);
-			if(!setDefault){
+			// One more language(locale_ja) in Excel while josn file locale_ja.json is not exists 
+			if(!setDefault && !pairs.isEmpty()){ 
 				nonEnglishLocalePair=pairs;
 				nonEnglishLocale=key;
 				setDefault=true;

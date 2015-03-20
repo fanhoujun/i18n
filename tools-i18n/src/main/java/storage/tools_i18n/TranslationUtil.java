@@ -1,6 +1,7 @@
 package storage.tools_i18n;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -19,7 +20,9 @@ import java.util.regex.Pattern;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
 
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.DateUtil;
+import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.eclipse.jgit.api.CheckoutCommand;
@@ -28,6 +31,8 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.InvalidRemoteException;
 import org.eclipse.jgit.api.errors.TransportException;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class TranslationUtil {
 	
@@ -123,7 +128,83 @@ public class TranslationUtil {
 	public static List<Message> readExcelFromTranslateTeam(String excelFilePath){
 		//log.log(Level.SEVERE, "File "+excelFilePath+" not found, please check"+);
 		List<Message> allTranslatedMessages = new ArrayList<Message>();
+		
+		Workbook wb=null;
+		try {
+			wb = WorkbookFactory.create(new FileInputStream(excelFilePath));
+		} catch(Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		Sheet sheet = wb.getSheet(Constant.SHEET_STORAGE);
+		Map<String, Integer> languageColumeMap=new HashMap<String, Integer>();
+		
+		int languagesRow=-1, keyColume=-1;
+		for(int i=sheet.getFirstRowNum();i<sheet.getLastRowNum();i++){
+			Row r = sheet.getRow(i);
+			int lastColumn = r.getLastCellNum();
+			for (int cn = 0; cn < lastColumn; cn++) {
+				if("KEY".equals(getCellValue(r.getCell(cn)))){
+					languagesRow=i;
+					keyColume=cn;
+					break;
+				}
+			}
+		}
+		Row row = sheet.getRow(languagesRow);
+		int lastColumn = row.getLastCellNum();
+		for (int cn = 0; cn < lastColumn; cn++) {
+			for(Country country : Country.values()){
+				if(country.getCtryName().equals(getCellValue(row.getCell(cn)))){
+					languageColumeMap.put(country.getCounrtyCode(), cn);
+					break;
+				}
+			}
+		}
+		if(languageColumeMap.size()!=Country.values().length){
+			log.log(Level.SEVERE, "Country Name defined in Country.java not match names in the spreadsheet at row#"+(languagesRow+1));
+		}
+		List<Country> otherCountries = Country.otherCountries();
+		for(int i=languagesRow+1, len=sheet.getLastRowNum() ;i<len;i++){
+			Row r = sheet.getRow(i);
+			String key = getCellValue(r.getCell(keyColume));
+			if(key==null || "".equals(key.trim())){
+				continue;
+			}
+			Message message = new Message();
+			message.setKey(key);
+			message.setEnVal(getCellValue(
+					r.getCell(
+							languageColumeMap.get(Country.ENGLISH.getCounrtyCode()))));
+			Map<String, String> otherTranslatedValues=new HashMap<String, String>();
+			for(Country country : otherCountries){
+				otherTranslatedValues.put(country.getCounrtyCode(), getCellValue(
+						r.getCell(languageColumeMap.get(country.getCounrtyCode()))));
+			}
+			message.setLanguagesVal(otherTranslatedValues);
+			allTranslatedMessages.add(message);
+		}
 		return allTranslatedMessages;
+	}
+	private static String getCellValue(Cell cell){
+		if(cell==null){return "";}
+		
+		switch (cell.getCellType()) {
+        case Cell.CELL_TYPE_STRING:
+            return cell.getRichStringCellValue().getString();
+        case Cell.CELL_TYPE_NUMERIC:
+            if (DateUtil.isCellDateFormatted(cell)) {
+                return cell.getDateCellValue().toString();
+            } else {
+                return cell.getNumericCellValue()+"";
+            }
+        case Cell.CELL_TYPE_BOOLEAN:
+           return String.valueOf(cell.getBooleanCellValue());
+        case Cell.CELL_TYPE_FORMULA:
+            return cell.getCellFormula();
+        default:
+        	return "";
+    }
 	}
 	/**
 	 * there are multiple josn_xx.json(json_en.json), read all of the keys in the files and return them as a Map
@@ -138,6 +219,9 @@ public class TranslationUtil {
 			keys.putAll(readJSON(folderPath+"\\locale_"+country.getCounrtyCode()+".json"));
 		}
 		log.log(Level.INFO, "End parsing. "+keys.size()+" keys found In total.");
+		if(keys.isEmpty()){
+			log.log(Level.WARNING, "locale_"+country.getCounrtyCode()+".json is empty");
+		}
 		log.log(Level.INFO, Constant.DELIMETER);
 		return keys;
 	}
@@ -209,23 +293,24 @@ public class TranslationUtil {
 			List<Message> noChangeMessages,
 			MetaData excelMetaData){
 		log.log(Level.INFO, "Generating spreadsheet "+outputFilePath+"......");
-		Workbook workbook = new HSSFWorkbook();
+		Workbook workbook = new XSSFWorkbook();
+		GenerateNeedTranslationExcel.generateMetaDataSheet(workbook, excelMetaData);
+		
 		Sheet sheet = workbook.createSheet(sheetName);
-		
+		sheet.setDefaultColumnWidth(0x24);
 		int rowNum = 0;
-		rowNum = NeedTranslationExcel.generateModifiedMessages(sheet, rowNum, modifiedMessages);
-		NeedTranslationExcel.createEmptyRow(sheet, rowNum++);
+		rowNum = GenerateNeedTranslationExcel.generateModifiedMessages(sheet, rowNum, modifiedMessages);
+		GenerateNeedTranslationExcel.createEmptyRow(sheet, rowNum++);
 		
-		rowNum = NeedTranslationExcel.generateNewMessages(sheet, rowNum, newMessages);
-		NeedTranslationExcel.createEmptyRow(sheet, rowNum++);
+		rowNum = GenerateNeedTranslationExcel.generateNewMessages(sheet, rowNum, newMessages);
+		GenerateNeedTranslationExcel.createEmptyRow(sheet, rowNum++);
 		
-		rowNum = NeedTranslationExcel.generateDeletedMessages(sheet, rowNum, deletedMessages);
-		NeedTranslationExcel.createEmptyRow(sheet, rowNum++);
+		rowNum = GenerateNeedTranslationExcel.generateDeletedMessages(sheet, rowNum, deletedMessages);
+		GenerateNeedTranslationExcel.createEmptyRow(sheet, rowNum++);
 		
-		rowNum = NeedTranslationExcel.generateNoChangeMessages(sheet, rowNum, noChangeMessages);
-		NeedTranslationExcel.createEmptyRow(sheet, rowNum++);
+		rowNum = GenerateNeedTranslationExcel.generateNoChangeMessages(sheet, rowNum, noChangeMessages);
+		GenerateNeedTranslationExcel.createEmptyRow(sheet, rowNum++);
 		
-		NeedTranslationExcel.generateMetaDataSheet(workbook, excelMetaData);
 		
 		FileOutputStream fileOut;
 		try {

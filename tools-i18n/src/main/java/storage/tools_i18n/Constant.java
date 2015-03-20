@@ -5,7 +5,7 @@ public class Constant {
 
 	public static final String GIT_URL = "git://";
 	
-	public static final String EXPORT_EXCEL_NAME="need-translated.xls";
+	public static final String EXPORT_EXCEL_NAME="need-translated.xlsx";
 	
 	public static final String BASE_RESOURCE_PATH = Thread.currentThread().getContextClassLoader().getResource(".").getPath();
 	
