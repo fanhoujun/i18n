@@ -1,4 +1,4 @@
-package storage.tools_i18n;
+package storage.tools_i18n.util;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -25,14 +25,21 @@ import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.eclipse.jgit.api.CheckoutCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.InvalidRemoteException;
+import org.eclipse.jgit.api.errors.JGitInternalException;
 import org.eclipse.jgit.api.errors.TransportException;
 import org.eclipse.jgit.revwalk.RevCommit;
-import org.apache.poi.ss.usermodel.WorkbookFactory;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import storage.tools_i18n.constant.ConfigurationConstant;
+import storage.tools_i18n.constant.Constant;
+import storage.tools_i18n.model.Country;
+import storage.tools_i18n.model.Message;
+import storage.tools_i18n.model.MetaData;
 
 public class TranslationUtil {
 	
@@ -66,14 +73,15 @@ public class TranslationUtil {
 		File localPath = new File(Constant.Directory_Current_Version);
 		String currentCommitId = checkoutProject(repoURL, localPath, commitId);
 		
-		String metadataFilePath = Constant.Directory_Current_Version + File.separator + Constant.METADATA_FILE;
+		String metadataFilePath = Constant.Directory_Current_Version + File.separator + ConfigurationConstant.METADATA_FILE;
 		File metadataFile = new File(metadataFilePath);
 		if(metadataFile.exists()) {
 			Map<String, String> map = readJSON(metadataFilePath);
-			metadata.setLastTranslatedCommitId(map.get("lastTranslatedCommitId"));
-			metadata.setCurrentCommitId(map.get("currentCommitId"));
-			metadata.setCreateDate(map.get("createDate"));
-			metadata.setCreatedBy(map.get("createdBy"));
+			metadata.setLastTranslatedCommitId(map.get(MetaData.META_LAST_TRANSLATED_COMMIT_ID));
+			metadata.setCurrentCommitId(map.get(MetaData.META_CURRENT_COMMIT_ID));
+			metadata.setCreateDate(map.get(MetaData.META_CREATE_DATE));
+			metadata.setCreatedBy(map.get(MetaData.META_CREATE_BY));
+			
 		} else {
 			metadata.setCurrentCommitId(currentCommitId);
 		}
@@ -136,7 +144,7 @@ public class TranslationUtil {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		Sheet sheet = wb.getSheet(Constant.SHEET_STORAGE);
+		Sheet sheet = wb.getSheet(ConfigurationConstant.SHEET_STORAGE_NAME);
 		Map<String, Integer> languageColumeMap=new HashMap<String, Integer>();
 		
 		int languagesRow=-1, keyColume=-1;
@@ -294,22 +302,22 @@ public class TranslationUtil {
 			MetaData excelMetaData){
 		log.log(Level.INFO, "Generating spreadsheet "+outputFilePath+"......");
 		Workbook workbook = new XSSFWorkbook();
-		GenerateNeedTranslationExcel.generateMetaDataSheet(workbook, excelMetaData);
+		GenerateTranslationExcel.generateMetaDataSheet(workbook, excelMetaData);
 		
 		Sheet sheet = workbook.createSheet(sheetName);
 		sheet.setDefaultColumnWidth(0x24);
 		int rowNum = 0;
-		rowNum = GenerateNeedTranslationExcel.generateModifiedMessages(sheet, rowNum, modifiedMessages);
-		GenerateNeedTranslationExcel.createEmptyRow(sheet, rowNum++);
+		rowNum = GenerateTranslationExcel.generateModifiedMessages(sheet, rowNum, modifiedMessages);
+		GenerateTranslationExcel.createEmptyRow(sheet, rowNum++);
 		
-		rowNum = GenerateNeedTranslationExcel.generateNewMessages(sheet, rowNum, newMessages);
-		GenerateNeedTranslationExcel.createEmptyRow(sheet, rowNum++);
+		rowNum = GenerateTranslationExcel.generateNewMessages(sheet, rowNum, newMessages);
+		GenerateTranslationExcel.createEmptyRow(sheet, rowNum++);
 		
-		rowNum = GenerateNeedTranslationExcel.generateDeletedMessages(sheet, rowNum, deletedMessages);
-		GenerateNeedTranslationExcel.createEmptyRow(sheet, rowNum++);
+		rowNum = GenerateTranslationExcel.generateDeletedMessages(sheet, rowNum, deletedMessages);
+		GenerateTranslationExcel.createEmptyRow(sheet, rowNum++);
 		
-		rowNum = GenerateNeedTranslationExcel.generateNoChangeMessages(sheet, rowNum, noChangeMessages);
-		GenerateNeedTranslationExcel.createEmptyRow(sheet, rowNum++);
+		rowNum = GenerateTranslationExcel.generateNoChangeMessages(sheet, rowNum, noChangeMessages);
+		GenerateTranslationExcel.createEmptyRow(sheet, rowNum++);
 		
 		
 		FileOutputStream fileOut;
@@ -379,12 +387,18 @@ public class TranslationUtil {
 					.setURI(repoURL)
 					.setDirectory(localPath)
 					.call();
-//		} catch (JGitInternalException e) {
-//			System.out.println(e);
-//			git = Git.open(localPath);
-//			git.fetch();
-//			git.rebase();
-		} catch (Exception e) {
+		} 
+		/*catch (JGitInternalException e) {
+			System.out.println(e);
+			try {
+				git = Git.open(localPath);
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			git.fetch();
+			git.rebase();
+		} */catch (Exception e) {
 			log.log(Level.SEVERE, "Clone repo failed! Error: " + e);
 			throw new RuntimeException("Clone repo failed! Error: " + e);
 		}

@@ -1,4 +1,4 @@
-package storage.tools_i18n;
+package storage.tools_i18n.util;
 
 import java.util.Random;
 

@@ -1,6 +1,7 @@
-package storage.tools_i18n;
+package storage.tools_i18n.util;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -12,13 +13,19 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 
-public class GenerateNeedTranslationExcel {
+import storage.tools_i18n.constant.ConfigurationConstant;
+import storage.tools_i18n.constant.Constant;
+import storage.tools_i18n.model.Country;
+import storage.tools_i18n.model.Message;
+import storage.tools_i18n.model.MetaData;
+
+public class GenerateTranslationExcel {
 	
 	public static void generateMetaDataSheet(Workbook workbook, MetaData metadata){
 		
-		Sheet sheet = workbook.createSheet(Constant.SHEET_METADATA);
+		Sheet sheet = workbook.createSheet(ConfigurationConstant.SHEET_METADATA_NAME);
 		Row row; int col=0, rowNum=0;
-		sheet.setDefaultColumnWidth(0x20);
+		sheet.setDefaultColumnWidth(0x28);
 		
 		CellStyle style = createMessageItemStyle(workbook);
 		
@@ -114,7 +121,12 @@ public class GenerateNeedTranslationExcel {
 				setCell(row.createCell(col++), message.getEnVal(), style);
 				
 				for(int i=0;i<otherCountries.size();i++){
-					setCell(row.createCell(col++), message.getLanguagesVal().get(otherCountries.get(i).getCounrtyCode()), style);
+					Map<String, String> map = message.getLanguagesVal(); 
+					String value = "";
+					if(map!=null){
+						value = map.get(otherCountries.get(i).getCounrtyCode());
+					}
+					setCell(row.createCell(col++), value, style);
 				}
 			}
 			

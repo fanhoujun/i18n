@@ -1,4 +1,4 @@
-package storage.tools_i18n;
+package storage.tools_i18n.model;
 
 import java.util.List;
 

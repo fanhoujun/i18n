@@ -1,6 +1,5 @@
-package storage.tools_i18n;
+package storage.tools_i18n.util;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -11,18 +10,21 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import storage.tools_i18n.constant.ConfigurationConstant;
+import storage.tools_i18n.constant.Constant;
+import storage.tools_i18n.model.Country;
+import storage.tools_i18n.model.Message;
+import storage.tools_i18n.model.MetaData;
+import storage.tools_i18n.model.NeedTranslationModel;
+
 public class TranslationTool {
 	
 	private static Logger log = Logger.getLogger(TranslationTool.class.getName());
 	private static List<Country> supportedOtherCountries= Country.otherCountries();
 	
-	public static void main(String[] args) {
-			
-	}
-	
-	public static void exportNeedTranslatedExcel(String filePath) throws IOException{
+	public static void exportNeedTranslatedExcel() {
 		//download the latest codes
-		MetaData metaData = TranslationUtil.downloadLatestCodes(Constant.GIT_URL, Constant.DEFAULT_BRANCH);
+		MetaData metaData = TranslationUtil.downloadLatestCodes(ConfigurationConstant.GIT_URL, ConfigurationConstant.DEFAULT_BRANCH);
 		List<String> currentJsonFolders = TranslationUtil.scanJsonFolders(Constant.Directory_Current_Version);
 		Map<String, String> englishPair = TranslationUtil.readAllKeys(currentJsonFolders, Country.ENGLISH);
 		
@@ -32,7 +34,7 @@ public class TranslationTool {
 		Map<String, Map<String, String>> otherLanguagesPreviousTranslatedPair= new HashMap<String, Map<String, String>>();
 		
 		if(lastTranslatedCommitId!=null && !lastTranslatedCommitId.trim().equals("")){
-			String downloadPath = TranslationUtil.downloadPreviousCodes(Constant.GIT_URL, lastTranslatedCommitId);
+			String downloadPath = TranslationUtil.downloadPreviousCodes(ConfigurationConstant.GIT_URL, lastTranslatedCommitId);
 			// previous version JSON file folder structure may not match current structure
 			List<String> previousJsonFileFolders = TranslationUtil.scanJsonFolders(downloadPath);
 			oldEnPair = TranslationUtil.readAllKeys(previousJsonFileFolders, Country.ENGLISH);
@@ -47,18 +49,18 @@ public class TranslationTool {
 		metaData.setCreatedBy("bhu@hp.com");
 		
 		needTranslationModel.setMetaData(metaData);
-		TranslationUtil.generateNeedTranslateExcel(Constant.EXPORT_EXCEL_NAME, Constant.SHEET_STORAGE,
+		TranslationUtil.generateNeedTranslateExcel(ConfigurationConstant.EXPORT_EXCEL_NAME, ConfigurationConstant.SHEET_STORAGE_NAME,
 				needTranslationModel.getModifiedMessages(), 
 				needTranslationModel.getNewMessages(),
 				needTranslationModel.getDeletedMessages(),
-				needTranslationModel.getNewMessages(),
+				needTranslationModel.getNoChangeMessages(),
 				needTranslationModel.getMetaData());
 	}
 	
 	public static void applyTranslatedMessage(String excelFilePath){
 		List<Message> translatedMessages = TranslationUtil.readExcelFromTranslateTeam(excelFilePath);
 		
-		MetaData metaData = TranslationUtil.downloadLatestCodes(Constant.GIT_URL, Constant.DEFAULT_BRANCH);
+		MetaData metaData = TranslationUtil.downloadLatestCodes(ConfigurationConstant.GIT_URL, ConfigurationConstant.DEFAULT_BRANCH);
 		List<String> currentJsonFolders = TranslationUtil.scanJsonFolders(Constant.Directory_Current_Version);
 		Map<String, String> englishPair = TranslationUtil.readAllKeys(currentJsonFolders, Country.ENGLISH);
 		
@@ -67,7 +69,7 @@ public class TranslationTool {
 		Map<String, Map<String, String>> otherLanguagesPreviousTranslatedPair= new HashMap<String, Map<String, String>>();
 		
 		if(lastTranslatedCommitId!=null && !lastTranslatedCommitId.trim().equals("")){
-			String downloadPath = TranslationUtil.downloadPreviousCodes(Constant.GIT_URL, metaData.getLastTranslatedCommitId());
+			String downloadPath = TranslationUtil.downloadPreviousCodes(ConfigurationConstant.GIT_URL, metaData.getLastTranslatedCommitId());
 			List<String> previousJsonFileFolders = TranslationUtil.scanJsonFolders(downloadPath);
 			oldEnPair = TranslationUtil.readAllKeys(previousJsonFileFolders, Country.ENGLISH);
 			
@@ -86,7 +88,12 @@ public class TranslationTool {
 			if(survivedKeys.containsKey(key)){
 				Map<String, String> translatedValues = translation.getLanguagesVal();
 				for(String languageCode : translatedValues.keySet()){
-					otherLanguagesPreviousTranslatedPair.get(languageCode).put(key, translatedValues.get(key));
+					Map<String, String> otherLanguageTraslations = otherLanguagesPreviousTranslatedPair.get(languageCode);
+					if(otherLanguageTraslations==null){
+						otherLanguageTraslations = new HashMap<String, String>();
+						otherLanguagesPreviousTranslatedPair.put(languageCode, otherLanguageTraslations);
+					}
+					otherLanguageTraslations.put(key, translatedValues.get(languageCode));
 				}
 			}
 		}
@@ -113,7 +120,7 @@ public class TranslationTool {
 		// keys separated in multiple json files
 		for(String folder : folderPaths){
 			log.log(Level.INFO, "|___Processing json files in foler "+folder+"......");
-			Map<String, String> partEnglishPair = TranslationUtil.readJSON(folderPaths+"\\locale_en.json");
+			Map<String, String> partEnglishPair = TranslationUtil.readJSON(folder+"\\locale_en.json");
 			for(Country country : supportedOtherCountries){
 				String countryCode = country.getCounrtyCode();
 				Map<String, String> finalTranslations = new HashMap<String, String>();
@@ -126,7 +133,7 @@ public class TranslationTool {
 						finalTranslations.put(key, translationValues.get(key));
 					}
 				}
-				TranslationUtil.generateJsonFile(finalTranslations, folderPaths+"\\locale_"+countryCode+".json");
+				TranslationUtil.generateJsonFile(finalTranslations, folder+"\\locale_"+countryCode+".json");
 			}
 		}
 		

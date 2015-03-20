@@ -11,6 +11,14 @@ import java.util.Map;
 import org.junit.Assert;
 import org.junit.Test;
 
+import storage.tools_i18n.constant.ConfigurationConstant;
+import storage.tools_i18n.model.Country;
+import storage.tools_i18n.model.Message;
+import storage.tools_i18n.model.MetaData;
+import storage.tools_i18n.model.NeedTranslationModel;
+import storage.tools_i18n.util.TranslationTool;
+import storage.tools_i18n.util.TranslationUtil;
+
 
 public class TranslationToolTest {
 	@Test
@@ -173,8 +181,8 @@ public class TranslationToolTest {
 		metaData.setCreatedBy("bhu@hp.com");
 		metaData.setCurrentCommitId("cxfdsafasdfasdfdas");
 		metaData.setLastTranslatedCommitId("lastdafdasfasdkfsdakfa");
-		TranslationUtil.generateNeedTranslateExcel(Constant.EXPORT_EXCEL_NAME, 
-				Constant.SHEET_STORAGE, 
+		TranslationUtil.generateNeedTranslateExcel(ConfigurationConstant.EXPORT_EXCEL_NAME, 
+				ConfigurationConstant.SHEET_STORAGE_NAME, 
 				modifiedMessages, newMessages, deletedMessages, noChangeMessages, metaData);
 		
 	}
