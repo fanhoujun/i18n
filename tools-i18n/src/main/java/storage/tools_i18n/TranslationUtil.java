@@ -13,6 +13,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
@@ -140,16 +142,52 @@ public class TranslationUtil {
 		return keys;
 	}
 	
+	/**
+	 * Scan the folders that contains locale_en.json file
+	 * @param rootFolder
+	 * @return
+	 */
 	public static List<String> scanJsonFolders(String rootFolder){
 		List<String> folderPaths = new ArrayList<String>();
 		log.log(Level.INFO, "Start searching folders in "+rootFolder+" which store locale json files......");
+		traverseFileInDirectory(rootFolder, "locale_en.json", folderPaths);
 		
-		log.log(Level.INFO, "End searching folders. "+folderPaths.size()+" folders found: \n");
-		for(String path : folderPaths){
+		String lastKey = "";
+		for(int i=0; i<folderPaths.size(); i++) {
+			Pattern pattern = Pattern.compile("\\\\v\\d+\\\\");
+			Matcher matcher = pattern.matcher(folderPaths.get(i));
+			
+			if(matcher.find()) {
+				int index = matcher.start();
+				String key = folderPaths.get(2).substring(0, index);
+				if(lastKey.equals(key)) {
+					folderPaths.remove(i-1);
+					i--;
+				} else {
+					lastKey = key;
+				}
+			}
+		}
+		
+		for(String path : folderPaths) {
 			log.log(Level.INFO, path+"\n");
 		}
+		log.log(Level.INFO, "End searching folders. "+folderPaths.size()+" folders found: \n");
 		log.log(Level.INFO, Constant.DELIMETER);
 		return folderPaths;
+	}
+	
+	public static void traverseFileInDirectory(String filePath, String fileName, List<String> folderPaths) {
+		File pFile = new File(filePath);
+		File[] files = pFile.listFiles();
+		for(File file : files) {
+			if(file.isDirectory()) {
+				traverseFileInDirectory(file.toString(), fileName, folderPaths);
+			}
+			if(fileName.equals(file.getName())) {
+				folderPaths.add(filePath);
+			}
+		}
 	}
 	
 	/**
@@ -311,14 +349,14 @@ public class TranslationUtil {
 	}
 	
 	public static void main(String[] args) {
-		String repoURL = "ssh://Wen-Qiang.Jia@c0040528.itcs.hp.com:8087/ECS-CC-NA-UI";
-		String commitId = "origin/development";
-		try {
+//		String repoURL = "ssh://Wen-Qiang.Jia@c0040528.itcs.hp.com:8087/ECS-CC-NA-UI";
+//		String commitId = "origin/development";
+//		try {
 //			TranslationUtil.downloadPreviousCodes(repoURL, commitId);
-			System.out.println(TranslationUtil.downloadLatestCodes(repoURL, commitId));
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+//			System.out.println(TranslationUtil.downloadLatestCodes(repoURL, commitId));
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
 		
 //		String jsonFilePath = Constant.CURRENT_CODE_PATH
 //				+ File.separator + "app/neo/static/lib/neo-1.1/i18n/locale_en.json";
@@ -329,5 +367,7 @@ public class TranslationUtil {
 //		}
 //		String jsonFilePath_new = "C:/SVN/locale_en.json";
 //		TranslationUtil.generateJsonFile(map, jsonFilePath_new);
+		
+//		TranslationUtil.scanJsonFolders(Constant.Directory_Current_Version);
 	}
 }
