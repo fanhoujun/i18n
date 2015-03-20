@@ -71,7 +71,7 @@ public class TranslationTool {
 	
 	public static void exportNeedTranslatedExcel(String filePath) throws IOException{
 		//download the latest codes
-		MetaData metaData = TranslationUtil.downloadLatestCodes(Constant.GIT_URL);
+		MetaData metaData = TranslationUtil.downloadLatestCodes(Constant.GIT_URL, Constant.DEFAULT_BRANCH);
 		List<String> currentJsonFolders = TranslationUtil.scanJsonFolders(Constant.Directory_Current_Version);
 		Map<String, String> englishPair = TranslationUtil.readAllKeys(currentJsonFolders, Country.ENGLISH);
 		
@@ -107,7 +107,7 @@ public class TranslationTool {
 	public static void applyTranslatedMessage(String excelFilePath){
 		List<Message> translatedMessages = TranslationUtil.readExcelFromTranslateTeam(excelFilePath);
 		
-		MetaData metaData = TranslationUtil.downloadLatestCodes(Constant.GIT_URL);
+		MetaData metaData = TranslationUtil.downloadLatestCodes(Constant.GIT_URL, Constant.DEFAULT_BRANCH);
 		List<String> currentJsonFolders = TranslationUtil.scanJsonFolders(Constant.Directory_Current_Version);
 		Map<String, String> englishPair = TranslationUtil.readAllKeys(currentJsonFolders, Country.ENGLISH);
 		

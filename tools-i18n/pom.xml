@@ -28,5 +28,18 @@
 		<version>3.11</version>
 	</dependency>
     
+    <dependency>
+		<groupId>org.eclipse.jgit</groupId>
+		<artifactId>org.eclipse.jgit</artifactId>
+		<version>3.7.0.201502260915-r</version>
+    </dependency>
+    
+    <dependency>
+		<groupId>net.sf.json-lib</groupId>
+		<artifactId>json-lib</artifactId>
+		<version>2.4</version>
+		<classifier>jdk15</classifier>
+	</dependency>
+	
   </dependencies>
 </project>
