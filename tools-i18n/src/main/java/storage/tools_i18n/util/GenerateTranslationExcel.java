@@ -14,7 +14,6 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 
 import storage.tools_i18n.constant.ConfigurationConstant;
-import storage.tools_i18n.constant.Constant;
 import storage.tools_i18n.model.Country;
 import storage.tools_i18n.model.Message;
 import storage.tools_i18n.model.MetaData;
@@ -30,12 +29,8 @@ public class GenerateTranslationExcel {
 		CellStyle style = createMessageItemStyle(workbook);
 		
 		row = sheet.createRow(rowNum++);col=0;
-		setCell(row.createCell(col++), MetaData.META_LAST_TRANSLATED_COMMIT_ID, style);
-		setCell(row.createCell(col++), metadata.getLastTranslatedCommitId(), style);
-		
-		row = sheet.createRow(rowNum++);col=0;
-		setCell(row.createCell(col++), MetaData.META_CURRENT_COMMIT_ID, style);
-		setCell(row.createCell(col++), metadata.getCurrentCommitId(), style);
+		setCell(row.createCell(col++), MetaData.META_COMMIT_ID, style);
+		setCell(row.createCell(col++), metadata.getCommitId(), style);
 		
 		row = sheet.createRow(rowNum++);col=0;
 		setCell(row.createCell(col++), MetaData.META_CREATE_BY, style);

@@ -23,7 +23,7 @@ import storage.tools_i18n.util.TranslationUtil;
 public class TranslationToolTest {
 	@Test
 	public void readExcelFromTranslateTeam(){
-		
+		System.out.println("==========readExcelFromTranslateTeam=========");
 		List<Message> messages = TranslationUtil.readExcelFromTranslateTeam("MyExcel.xlsx");
 		for(Message msg : messages){
 			System.out.println(msg.getKey()+"="+msg.getEnVal());
@@ -32,37 +32,70 @@ public class TranslationToolTest {
 	}
 	@Test
 	public void calculateApplyTranslationData(){
-		List<Message> translatedMessages;
-		Map<String, String> englishPair;Map<String, String> otherLocalePair;Map<String, String> oldEngPair;
-		englishPair = new HashMap<String, String>(); oldEngPair = new HashMap<String, String>();
+		System.out.println("==========calculateApplyTranslationData=========");
+		Map<String, String> englishPair = new HashMap<String, String>(); 
 		englishPair.put("Menu.home", "Home");
 		englishPair.put("Menu.ManageUser", "User Management System");
 		englishPair.put("PlaceHolder.Search", "Search");
 		englishPair.put("Menu.Navigator", "Navigator Bar");
 		englishPair.put("Menu.Settings", "Settings");
 		
+		Map<String, String> oldEngPair = new HashMap<String, String>();
 		oldEngPair.put("Menu.home", "Home");
 		oldEngPair.put("Menu.SiteMap", "WebSiteMap");
 		oldEngPair.put("Menu.ManageUser", "User Management System");
 		oldEngPair.put("PlaceHolder.Search", "Search");
 		oldEngPair.put("Menu.Navigator", "Navigator");
 		
-		otherLocalePair= new HashMap<String, String>();
+		Map<String, String> otherLocalePair = new HashMap<String, String>();
 		otherLocalePair.put("Menu.home", "首页");
 		otherLocalePair.put("Menu.ManageUser", "用户管理");
 		otherLocalePair.put("Menu.Admin", "管理员");
 		
-		translatedMessages = new ArrayList<Message>();
-		//Message msg =new Message();
+		String modifiedByTranslationTeam="User Management: updated from translation team";
+		List<Message> translatedMessages = new ArrayList<Message>();
+		Message msg =new Message();
+		msg.setKey("Menu.ManageUser");
+		msg.setEnVal(modifiedByTranslationTeam);
+		Map<String, String> languagesVal = new HashMap<String, String>();
+		languagesVal.put(Country.FRENCH.getCounrtyCode(), "用户管理系统");
+		msg.setLanguagesVal(languagesVal);
+		translatedMessages.add(msg);
 		
-		//translatedMessages.add(msg);
-		oldEngPair.put("Menu.SiteMap", "WebSiteMap");
-		oldEngPair.put("Menu.ManageUser", "User Management System");
-		oldEngPair.put("PlaceHolder.Search", "Search");
-		oldEngPair.put("Menu.Navigator", "Navigator");
+		msg =new Message();
+		msg.setKey("PlaceHolder.Search");
+		msg.setEnVal("Search");
+		languagesVal = new HashMap<String, String>();
+		languagesVal.put(Country.FRENCH.getCounrtyCode(), "搜索");
+		msg.setLanguagesVal(languagesVal);
+		translatedMessages.add(msg);
+		
+		msg =new Message();
+		msg.setKey("Menu.SiteMap");
+		msg.setEnVal("WebSiteMap");
+		languagesVal = new HashMap<String, String>();
+		languagesVal.put(Country.FRENCH.getCounrtyCode(), "网站地图");
+		msg.setLanguagesVal(languagesVal);
+		translatedMessages.add(msg);
+		
+		msg =new Message();
+		msg.setKey("Menu.Navigator");
+		msg.setEnVal("Navigator");
+		languagesVal = new HashMap<String, String>();
+		languagesVal.put(Country.FRENCH.getCounrtyCode(), "导航");
+		msg.setLanguagesVal(languagesVal);
+		translatedMessages.add(msg);
+		
+		Map<String, String> res = TranslationTool.calculateApplyTranslationData(translatedMessages, englishPair, otherLocalePair, oldEngPair);
+		for(String key : res.keySet()){
+			System.out.println(key+"="+res.get(key));
+		}
+		Assert.assertEquals(res.get("Menu.ManageUser"), modifiedByTranslationTeam);
+		Assert.assertEquals(res.size(), 3);
 	}
 	@Test
 	public void prepareNeedTranslationData(){
+		System.out.println("==========prepareNeedTranslationData=========");
 		Map<String, String> oldEnPair= new HashMap<String, String>(), englishPair = new HashMap<String, String>(); 
 		Map<String, Map<String, String>> otherLanguagesPreviousTranslatedPair=new HashMap<String, Map<String, String>>();
 		
@@ -113,6 +146,8 @@ public class TranslationToolTest {
 	}
 	@Test
 	public void checkFileConsistent(){
+		System.out.println("==========checkFileConsistent=========");
+		
 		Map<String, Map<String, String>> otherLanguagesPreviousTranslatedPair = new HashMap<String, Map<String, String>>();
 		
 		Map<String, String> map = new HashMap<String, String>();
@@ -128,12 +163,15 @@ public class TranslationToolTest {
 		map.put("Menu.Nav", "Navigator");
 		otherLanguagesPreviousTranslatedPair.put(Country.GERMAN.getCounrtyCode(), map);
 		
-		System.out.println();
-		Assert.assertEquals(1, TranslationTool.checkFileConsistent(otherLanguagesPreviousTranslatedPair).size());
+		Map<String, String> res = TranslationTool.checkFileConsistent(otherLanguagesPreviousTranslatedPair);
+		System.out.println(res);
+		Assert.assertEquals(1, res.size());
 		
 	}
 	@Test
 	public void generateNeedTranslationData(){
+		System.out.println("==========generateNeedTranslationData=========");
+		
 		List<Message> modifiedMessages = new ArrayList<Message>(), 
 				newMessages = new ArrayList<Message>() ,
 				deletedMessages = new ArrayList<Message>(), 
@@ -179,8 +217,7 @@ public class TranslationToolTest {
 		MetaData metaData = new MetaData();
 		metaData.setCreateDate(new SimpleDateFormat("dd MMM yyyy HH:mm", Locale.ENGLISH).format(new Date()));
 		metaData.setCreatedBy("bhu@hp.com");
-		metaData.setCurrentCommitId("cxfdsafasdfasdfdas");
-		metaData.setLastTranslatedCommitId("lastdafdasfasdkfsdakfa");
+		metaData.setCommitId("cxfdsafasdfasdfdas");
 		TranslationUtil.generateNeedTranslateExcel(ConfigurationConstant.EXPORT_EXCEL_NAME, 
 				ConfigurationConstant.SHEET_STORAGE_NAME, 
 				modifiedMessages, newMessages, deletedMessages, noChangeMessages, metaData);

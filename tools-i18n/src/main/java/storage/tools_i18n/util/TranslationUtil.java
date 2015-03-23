@@ -84,12 +84,11 @@ public class TranslationUtil {
 		}
 		if(metadataFilePath != null && metadataFile.exists()) {
 			Map<String, String> map = readJSON(metadataFilePath);
-			metadata.setLastTranslatedCommitId(map.get(MetaData.META_LAST_TRANSLATED_COMMIT_ID));
-			metadata.setCurrentCommitId(map.get(MetaData.META_CURRENT_COMMIT_ID));
+			metadata.setCommitId(map.get(MetaData.META_COMMIT_ID));
 			metadata.setCreateDate(map.get(MetaData.META_CREATE_DATE));
 			metadata.setCreatedBy(map.get(MetaData.META_CREATE_BY));
 		} else {
-			metadata.setCurrentCommitId(currentCommitId);
+			metadata.setCommitId(currentCommitId);
 		}
 		log.log(Level.INFO, Constant.DELIMETER);
 		return metadata;
@@ -341,6 +340,7 @@ public class TranslationUtil {
 			e.printStackTrace();
 		}
 		log.log(Level.INFO, Constant.DELIMETER);
+		log.log(Level.INFO, "Generated spreadsheet "+outputFilePath+".");
 	}
 	
 	/**

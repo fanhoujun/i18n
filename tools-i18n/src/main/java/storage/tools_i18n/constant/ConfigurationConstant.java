@@ -10,7 +10,10 @@ public class ConfigurationConstant {
 	
 	public static final String DEFAULT_BRANCH = "origin/development";
 	
-	public static final String GIT_URL = "C:\\GIT\\ECS-CC-NA-UI";
+	public static final String GIT_URL = "C:\\Users\\hubenlv\\ECS-CC-NA-UI";
 	
 	public static final String SHEET_STORAGE_NAME= "STORAGE (ALL)";
+
+	public static final String TRANSLATED_SPREADSHEET = "D:\\Neo Storage\\i18n\\Translated Samples.xlsx";
+	
 }

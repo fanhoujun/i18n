@@ -69,7 +69,7 @@ public class TranslationUtilTest {
 		File file = new File(Directory_Current_Version);
 		assertTrue(file.exists());
 		assertTrue(file.listFiles().length > 0);
-		assertNotNull(metadata.getCurrentCommitId());
+		assertNotNull(metadata.getCommitId());
 	}
 	
 	@Test
