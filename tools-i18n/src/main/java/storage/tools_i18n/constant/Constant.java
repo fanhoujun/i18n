@@ -10,5 +10,7 @@ public class Constant {
 	public static final String Directory_Current_Version= BASE_RESOURCE_PATH + "current";
 	
 	public static final String DELIMETER="-------------------------------------------------";
+	
+	public static final String LOCALE_EN = "locale_en.json";
 
 }

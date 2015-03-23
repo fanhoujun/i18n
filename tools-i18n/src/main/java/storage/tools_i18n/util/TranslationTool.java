@@ -25,7 +25,7 @@ public class TranslationTool {
 	public static void exportNeedTranslatedExcel() {
 		//download the latest codes
 		MetaData metaData = TranslationUtil.downloadLatestCodes(ConfigurationConstant.GIT_URL, ConfigurationConstant.DEFAULT_BRANCH);
-		List<String> currentJsonFolders = TranslationUtil.scanJsonFolders(Constant.Directory_Current_Version);
+		List<String> currentJsonFolders = TranslationUtil.scanJsonFolders(Constant.Directory_Current_Version, Constant.LOCALE_EN);
 		Map<String, String> englishPair = TranslationUtil.readAllKeys(currentJsonFolders, Country.ENGLISH);
 		
 		//if applied translation before, download the last applied version 
@@ -36,7 +36,7 @@ public class TranslationTool {
 		if(lastTranslatedCommitId!=null && !lastTranslatedCommitId.trim().equals("")){
 			String downloadPath = TranslationUtil.downloadPreviousCodes(ConfigurationConstant.GIT_URL, lastTranslatedCommitId);
 			// previous version JSON file folder structure may not match current structure
-			List<String> previousJsonFileFolders = TranslationUtil.scanJsonFolders(downloadPath);
+			List<String> previousJsonFileFolders = TranslationUtil.scanJsonFolders(downloadPath, Constant.LOCALE_EN);
 			oldEnPair = TranslationUtil.readAllKeys(previousJsonFileFolders, Country.ENGLISH);
 			for(Country otherCountries : supportedOtherCountries){
 				otherLanguagesPreviousTranslatedPair.put(otherCountries.getCounrtyCode(), TranslationUtil.readAllKeys(previousJsonFileFolders, otherCountries));
@@ -61,7 +61,7 @@ public class TranslationTool {
 		List<Message> translatedMessages = TranslationUtil.readExcelFromTranslateTeam(excelFilePath);
 		
 		MetaData metaData = TranslationUtil.downloadLatestCodes(ConfigurationConstant.GIT_URL, ConfigurationConstant.DEFAULT_BRANCH);
-		List<String> currentJsonFolders = TranslationUtil.scanJsonFolders(Constant.Directory_Current_Version);
+		List<String> currentJsonFolders = TranslationUtil.scanJsonFolders(Constant.Directory_Current_Version, Constant.LOCALE_EN);
 		Map<String, String> englishPair = TranslationUtil.readAllKeys(currentJsonFolders, Country.ENGLISH);
 		
 		String lastTranslatedCommitId= metaData.getLastTranslatedCommitId();
@@ -70,7 +70,7 @@ public class TranslationTool {
 		
 		if(lastTranslatedCommitId!=null && !lastTranslatedCommitId.trim().equals("")){
 			String downloadPath = TranslationUtil.downloadPreviousCodes(ConfigurationConstant.GIT_URL, metaData.getLastTranslatedCommitId());
-			List<String> previousJsonFileFolders = TranslationUtil.scanJsonFolders(downloadPath);
+			List<String> previousJsonFileFolders = TranslationUtil.scanJsonFolders(downloadPath, Constant.LOCALE_EN);
 			oldEnPair = TranslationUtil.readAllKeys(previousJsonFileFolders, Country.ENGLISH);
 			
 			// non English Locale file should not modified by developers, so we read the previous commit version

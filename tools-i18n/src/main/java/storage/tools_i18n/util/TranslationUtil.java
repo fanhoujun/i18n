@@ -29,9 +29,13 @@ import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.eclipse.jgit.api.CheckoutCommand;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.CheckoutConflictException;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.InvalidRefNameException;
 import org.eclipse.jgit.api.errors.InvalidRemoteException;
 import org.eclipse.jgit.api.errors.JGitInternalException;
+import org.eclipse.jgit.api.errors.RefAlreadyExistsException;
+import org.eclipse.jgit.api.errors.RefNotFoundException;
 import org.eclipse.jgit.api.errors.TransportException;
 import org.eclipse.jgit.revwalk.RevCommit;
 
@@ -54,10 +58,9 @@ public class TranslationUtil {
 	 */
 	public static String downloadPreviousCodes(String repoURL, String commitId) {
 		log.log(Level.INFO, "Start donwloading files into folder [] from "+repoURL+"[commitId="+commitId+"]");
-		File localPath = new File(Constant.Directory_Previous_Version);
-		checkoutProject(repoURL, localPath, commitId);
+		checkoutProject(repoURL, commitId);
 		log.log(Level.INFO, Constant.DELIMETER);
-		return Constant.Directory_Previous_Version;
+		return repoURL;
 	}
 	
 	/**
@@ -70,18 +73,21 @@ public class TranslationUtil {
 	public static MetaData downloadLatestCodes(String repoURL, String commitId) {
 		log.log(Level.INFO, "Start donwloading files into folder [] from "+repoURL+"[commitId="+commitId+"]");
 		MetaData metadata = new MetaData();
-		File localPath = new File(Constant.Directory_Current_Version);
-		String currentCommitId = checkoutProject(repoURL, localPath, commitId);
+		String metadataFilePath = null;
+		File metadataFile = null;
+		String currentCommitId = checkoutProject(repoURL, commitId);
 		
-		String metadataFilePath = Constant.Directory_Current_Version + File.separator + ConfigurationConstant.METADATA_FILE;
-		File metadataFile = new File(metadataFilePath);
-		if(metadataFile.exists()) {
+		List<String> files = scanJsonFolders(repoURL, ConfigurationConstant.METADATA_FILE);
+		if(files.size() > 0) {
+			metadataFilePath = files.get(0) + File.separator + ConfigurationConstant.METADATA_FILE;
+			metadataFile = new File(metadataFilePath);
+		}
+		if(metadataFilePath != null && metadataFile.exists()) {
 			Map<String, String> map = readJSON(metadataFilePath);
 			metadata.setLastTranslatedCommitId(map.get(MetaData.META_LAST_TRANSLATED_COMMIT_ID));
 			metadata.setCurrentCommitId(map.get(MetaData.META_CURRENT_COMMIT_ID));
 			metadata.setCreateDate(map.get(MetaData.META_CREATE_DATE));
 			metadata.setCreatedBy(map.get(MetaData.META_CREATE_BY));
-			
 		} else {
 			metadata.setCurrentCommitId(currentCommitId);
 		}
@@ -239,10 +245,10 @@ public class TranslationUtil {
 	 * @param rootFolder
 	 * @return
 	 */
-	public static List<String> scanJsonFolders(String rootFolder){
+	public static List<String> scanJsonFolders(String rootFolder, String fileName){
 		List<String> folderPaths = new ArrayList<String>();
 		log.log(Level.INFO, "Start searching folders in "+rootFolder+" which store locale json files......");
-		traverseFileInDirectory(rootFolder, "locale_en.json", folderPaths);
+		traverseFileInDirectory(rootFolder, fileName, folderPaths);
 		
 		String lastKey = "";
 		for(int i=0; i<folderPaths.size(); i++) {
@@ -373,48 +379,33 @@ public class TranslationUtil {
 	 * @throws GitAPIException
 	 * @throws IOException
 	 */
-	public static String checkoutProject(String repoURL, File localPath, String commitId) {
-		log.log(Level.INFO, "Start to clone " + repoURL + " to " + localPath);
-		if(localPath.exists()) {
-			deleteAll(localPath);
+	public static String checkoutProject(String repoURL, String commitId) {
+		log.log(Level.INFO, "Open " + repoURL);
+		File repo = new File(repoURL);
+		if(!repo.exists() || repo.listFiles().length <= 0) {
+			log.log(Level.SEVERE, "Can not find the Git repo: " + repoURL);
+			throw new RuntimeException("Can not find the Git repo: " + repoURL);
 		}
-		localPath.mkdir();
 		
-		//Clone Git repo to localPath
 		Git git = null;
 		try {
-			git = Git.cloneRepository()
-					.setURI(repoURL)
-					.setDirectory(localPath)
-					.call();
-		} 
-		/*catch (JGitInternalException e) {
-			System.out.println(e);
-			try {
-				git = Git.open(localPath);
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-			git.fetch();
-			git.rebase();
-		} */catch (Exception e) {
-			log.log(Level.SEVERE, "Clone repo failed! Error: " + e);
-			throw new RuntimeException("Clone repo failed! Error: " + e);
+			git = Git.open(repo);
+		} catch (IOException e) {
+			log.log(Level.SEVERE, "Open repo failed! Error: " + e);
+			throw new RuntimeException("Open repo failed! Error: " + e);
 		}
 		
-		try {
-			//Checkout, commitId can be branch name or commit ID
-			CheckoutCommand cc = null;
-			if(!StringUtil.isEmpty(commitId)) {
-				log.log(Level.INFO, "checkout " + commitId);
-				cc = git.checkout();
-				cc.setName(commitId);
+		//Checkout, commitId can be branch name or commit ID
+		if(!StringUtil.isEmpty(commitId)) {
+			log.log(Level.INFO, "checkout " + commitId);
+			CheckoutCommand cc = git.checkout();
+			cc.setName(commitId);
+			try {
+				cc.call();
+			} catch (Exception e) {
+				log.log(Level.SEVERE, "Checkout failed! Error: " + e);
+				throw new RuntimeException("Checkout failed! Error: " + e);
 			}
-			cc.call();
-		} catch (Exception e) {
-			log.log(Level.SEVERE, "Checkout failed! Error: " + e);
-			throw new RuntimeException("Checkout failed! Error: " + e);
 		}
 		
 		//If the commitId is empty(means the current branch is master) or a branch name, get the latest commit ID
@@ -448,14 +439,16 @@ public class TranslationUtil {
 	}
 	
 	public static void main(String[] args) {
-//		String repoURL = "ssh://Wen-Qiang.Jia@c0040528.itcs.hp.com:8087/ECS-CC-NA-UI";
+//		String commitId = "76fb7c4db49b3eb98dfab5d0291a7f32dd371c59";
+//		String path = TranslationUtil.downloadPreviousCodes(ConfigurationConstant.GIT_URL, commitId);
+//		System.out.println(path);
+		
 //		String commitId = "origin/development";
-//		try {
-//			TranslationUtil.downloadPreviousCodes(repoURL, commitId);
-//			System.out.println(TranslationUtil.downloadLatestCodes(repoURL, commitId));
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
+//		MetaData metadata = TranslationUtil.downloadLatestCodes(ConfigurationConstant.GIT_URL, commitId);
+//		System.out.println("LastTranslatedCommitId:" + metadata.getLastTranslatedCommitId());
+//		System.out.println("CurrentCommitId:" + metadata.getCurrentCommitId());
+//		System.out.println("CreateDate:" + metadata.getCreateDate());
+//		System.out.println("CreatedBy:" + metadata.getCreatedBy());
 		
 //		String jsonFilePath = Constant.CURRENT_CODE_PATH
 //				+ File.separator + "app/neo/static/lib/neo-1.1/i18n/locale_en.json";

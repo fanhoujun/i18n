@@ -10,7 +10,7 @@ public class ConfigurationConstant {
 	
 	public static final String DEFAULT_BRANCH = "origin/development";
 	
-	public static final String GIT_URL = "ssh://Ben-Lv.Hu@c0040528.itcs.hp.com:8087/ECS-CC-NA-UI";
+	public static final String GIT_URL = "C:\\GIT\\ECS-CC-NA-UI";
 	
 	public static final String SHEET_STORAGE_NAME= "STORAGE (ALL)";
 }
