@@ -9,19 +9,21 @@ public class ConfigurationConstant {
 	
 	private static Logger log = Logger.getLogger(ConfigurationConstant.class.getName());
 	
-	public static String SHEET_METADATA_NAME = "meta-data";
+	public static String SHEET_METADATA_NAME;
 
-	public static String METADATA_FILE = "metadata.json";
+	public static String METADATA_FILE;
 	
-	public static String EXPORT_EXCEL_NAME="need-translated.xlsx";
+	public static String EXPORT_EXCEL_NAME;
 	
-	public static String DEFAULT_BRANCH = "origin/development";
+	public static String DEFAULT_BRANCH;
 	
-	public static String GIT_URL = "C:\\Users\\hubenlv\\ECS-CC-NA-UI";
+	public static String GIT_URL;
 	
-	public static String SHEET_STORAGE_NAME= "STORAGE (ALL)";
+	public static String SHEET_STORAGE_NAME;
 
-	public static String TRANSLATED_SPREADSHEET = "D:\\Neo Storage\\i18n\\Translated Samples.xlsx";
+	public static String TRANSLATED_SPREADSHEET;
+	
+	public static String METADATA_CREATE_BY;
 	
 	static {
 		String propName = Thread.currentThread().getContextClassLoader().getResource(".").getPath();
@@ -46,6 +48,7 @@ public class ConfigurationConstant {
 		DEFAULT_BRANCH = pps.getProperty("DEFAULT_BRANCH");
 		SHEET_STORAGE_NAME = pps.getProperty("SHEET_STORAGE_NAME");
 		TRANSLATED_SPREADSHEET = pps.getProperty("TRANSLATED_SPREADSHEET");
+		METADATA_CREATE_BY = pps.getProperty("METADATA_CREATE_BY");
 	}
 	
 }

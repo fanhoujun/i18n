@@ -70,12 +70,13 @@ public class TranslationUtil {
 	 * @throws TransportException 
 	 * @throws InvalidRemoteException 
 	 */
-	public static MetaData downloadLatestCodes(String repoURL, String commitId) {
-		log.log(Level.INFO, "Start donwloading files into folder [] from "+repoURL+"[commitId="+commitId+"]");
-		MetaData metadata = new MetaData();
+	public static MetaData downloadLatestCodes(String repoURL, String branchName) {
+		log.log(Level.INFO, "Start donwloading files into folder [] from "+repoURL+"[commitId="+branchName+"]");
 		String metadataFilePath = null;
 		File metadataFile = null;
-		String currentCommitId = checkoutProject(repoURL, commitId);
+		
+		MetaData metadata = new MetaData();
+		metadata.setWorkspaceCommitId(checkoutProject(repoURL, branchName));
 		
 		List<String> files = scanJsonFolders(repoURL, ConfigurationConstant.METADATA_FILE);
 		if(files.size() > 0) {
@@ -87,9 +88,8 @@ public class TranslationUtil {
 			metadata.setCommitId(map.get(MetaData.META_COMMIT_ID));
 			metadata.setCreateDate(map.get(MetaData.META_CREATE_DATE));
 			metadata.setCreatedBy(map.get(MetaData.META_CREATE_BY));
-		} else {
-			metadata.setCommitId(currentCommitId);
 		}
+		
 		log.log(Level.INFO, Constant.DELIMETER);
 		return metadata;
 	}
@@ -229,7 +229,7 @@ public class TranslationUtil {
 		Map<String, String> keys = new HashMap<String, String>();
 		log.log(Level.INFO, "Start parsing all locale_"+country.getCounrtyCode()+".json files......");
 		for(String folderPath : folders){
-			keys.putAll(readJSON(folderPath+"\\locale_"+country.getCounrtyCode()+".json"));
+			keys.putAll(readJSON(folderPath+File.separator+"locale_"+country.getCounrtyCode()+".json"));
 		}
 		log.log(Level.INFO, "End parsing. "+keys.size()+" keys found In total.");
 		if(keys.isEmpty()){
@@ -380,6 +380,9 @@ public class TranslationUtil {
 	 * @throws IOException
 	 */
 	public static String checkoutProject(String repoURL, String commitId) {
+		if(StringUtil.isEmpty(commitId)){
+			throw new RuntimeException("commitId should not empty!");
+		}
 		log.log(Level.INFO, "Open " + repoURL);
 		File repo = new File(repoURL);
 		if(!repo.exists() || repo.listFiles().length <= 0) {
@@ -410,11 +413,9 @@ public class TranslationUtil {
 		
 		//If the commitId is empty(means the current branch is master) or a branch name, get the latest commit ID
 		try {
-			if(StringUtil.isEmpty(commitId) || commitId.contains("origin")) {
 				Iterable<RevCommit> logs = git.log().call();
 				RevCommit rc = logs.iterator().next();
 				commitId = rc.getName();
-			}
 		} catch (Exception e) {
 			log.log(Level.SEVERE, "Get commit ID failed! Error: " + e);
 			throw new RuntimeException("Get commit ID failed! Error: " + e);

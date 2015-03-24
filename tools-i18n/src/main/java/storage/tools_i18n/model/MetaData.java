@@ -14,7 +14,14 @@ public class MetaData {
 	private String commitId;
 	private String createDate;
 	private String createdBy;
+	private String workspaceCommitId;
 	
+	public String getWorkspaceCommitId() {
+		return workspaceCommitId;
+	}
+	public void setWorkspaceCommitId(String workspaceCommitId) {
+		this.workspaceCommitId = workspaceCommitId;
+	}
 	public String getCommitId() {
 		if(commitId==null || "".equals(commitId.trim())){
 			log.warning("Last Apply Translation CommitID not found, no previous codes will download!");
@@ -39,7 +46,8 @@ public class MetaData {
 	public Map<String, String> converToMap(){
 		Map<String, String> map = new HashMap<String, String>();
 		map.put(META_CREATE_DATE, this.createDate);
-		map.put(META_COMMIT_ID, this.commitId);
+		// update metadata.json field commit id with workspace commit id
+		map.put(META_COMMIT_ID, this.getWorkspaceCommitId());
 		map.put(META_CREATE_BY, this.createdBy);
 		return map;
 	}

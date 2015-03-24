@@ -28,13 +28,14 @@ public class TranslationTool {
 		//download the latest codes
 		AnalysisDataModel analysisDataModel = loadDataForCompare();
 		
-		MetaData metaData = analysisDataModel.getMetaData();
+		//MetaData metaData = analysisDataModel.getMetaData();
 		Map<String, String> englishPair = analysisDataModel.getEnglishPair();
 		Map<String, String> oldEnPair = analysisDataModel.getOldEnPair();
 		Map<String, Map<String, String>> otherLanguagesPreviousTranslatedPair = analysisDataModel.getOtherLanguagesPreviousTranslatedPair();
 		
+		MetaData metaData = analysisDataModel.getMetaData();
 		metaData.setCreateDate(new SimpleDateFormat("dd MMM yyyy HH:mm", Locale.ENGLISH).format(new Date()));
-		metaData.setCreatedBy("bhu@hp.com");
+		metaData.setCreatedBy(ConfigurationConstant.METADATA_CREATE_BY);
 		
 		NeedTranslationModel needTranslationModel = prepareNeedTranslationData(oldEnPair, englishPair, otherLanguagesPreviousTranslatedPair);
 		
@@ -46,7 +47,7 @@ public class TranslationTool {
 				needTranslationModel.getNoChangeMessages(),
 				needTranslationModel.getMetaData());
 		// generate metadata.json
-		TranslationUtil.generateJsonFile(metaData.converToMap(), ConfigurationConstant.GIT_URL+"\\"+ConfigurationConstant.METADATA_FILE);
+		TranslationUtil.generateJsonFile(metaData.converToMap(), ConfigurationConstant.GIT_URL+File.separator+ConfigurationConstant.METADATA_FILE);
 		
 	}
 	
@@ -134,20 +135,27 @@ public class TranslationTool {
 		// keys separated in multiple json files
 		for(String folder : folderPaths){
 			log.log(Level.INFO, "|___Processing json files in foler "+folder+"......");
-			Map<String, String> partEnglishPair = TranslationUtil.readJSON(folder+"\\locale_en.json");
+			Map<String, String> partEnglishPair = TranslationUtil.readJSON(folder+File.separator+"locale_en.json");
 			for(Country country : supportedOtherCountries){
 				String countryCode = country.getCounrtyCode();
 				Map<String, String> finalTranslations = new HashMap<String, String>();
 				Map<String, String> translationValues = otherLanguagesPreviousTranslatedPair.get(countryCode);
 				log.log(Level.INFO, "|_______processing locale_"+countryCode+".json......");
+				boolean modifiedByTranslationTeam = false;
 				for(String key : partEnglishPair.keySet()){
 					//update locale_en.json
+					if(!englishPair.get(key).equals(partEnglishPair.get(key))){
+						modifiedByTranslationTeam = true;
+					}
 					partEnglishPair.put(key, englishPair.get(key));
 					if(translationValues.containsKey(key)){
 						finalTranslations.put(key, translationValues.get(key));
 					}
 				}
-				TranslationUtil.generateJsonFile(finalTranslations, folder+"\\locale_"+countryCode+".json");
+				TranslationUtil.generateJsonFile(finalTranslations, folder+File.separator+"locale_"+countryCode+".json");
+				if(modifiedByTranslationTeam){
+					TranslationUtil.generateJsonFile(partEnglishPair, folder+File.separator+"locale_"+Country.ENGLISH.getCounrtyCode()+".json");
+				}
 			}
 		}
 		

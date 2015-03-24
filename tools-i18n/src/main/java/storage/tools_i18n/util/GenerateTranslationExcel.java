@@ -30,7 +30,7 @@ public class GenerateTranslationExcel {
 		
 		row = sheet.createRow(rowNum++);col=0;
 		setCell(row.createCell(col++), MetaData.META_COMMIT_ID, style);
-		setCell(row.createCell(col++), metadata.getCommitId(), style);
+		setCell(row.createCell(col++), metadata.getWorkspaceCommitId(), style);
 		
 		row = sheet.createRow(rowNum++);col=0;
 		setCell(row.createCell(col++), MetaData.META_CREATE_BY, style);
