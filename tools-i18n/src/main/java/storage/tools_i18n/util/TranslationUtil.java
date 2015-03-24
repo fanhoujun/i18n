@@ -256,7 +256,7 @@ public class TranslationUtil {
 			
 			if(matcher.find()) {
 				int index = matcher.start();
-				String key = folderPaths.get(2).substring(0, index);
+				String key = folderPaths.get(i).substring(0, index);
 				if(lastKey.equals(key)) {
 					folderPaths.remove(i-1);
 					i--;
@@ -460,6 +460,6 @@ public class TranslationUtil {
 //		String jsonFilePath_new = "C:/SVN/locale_en.json";
 //		TranslationUtil.generateJsonFile(map, jsonFilePath_new);
 		
-//		TranslationUtil.scanJsonFolders(Constant.Directory_Current_Version);
+//		TranslationUtil.scanJsonFolders(ConfigurationConstant.GIT_URL, "locale_en.json");
 	}
 }
