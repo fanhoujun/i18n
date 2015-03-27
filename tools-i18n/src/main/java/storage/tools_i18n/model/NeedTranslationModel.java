@@ -8,7 +8,15 @@ public class NeedTranslationModel {
 	List<Message> deletedMessages; 
 	List<Message> noChangeMessages;
 	
-	MetaData metaData;
+	private String sheetName;
+	
+	public String getSheetName() {
+		return sheetName;
+	}
+
+	public void setSheetName(String sheetName) {
+		this.sheetName = sheetName;
+	}
 
 	public List<Message> getModifiedMessages() {
 		return modifiedMessages;
@@ -42,13 +50,6 @@ public class NeedTranslationModel {
 		this.noChangeMessages = noChangeMessages;
 	}
 
-	public MetaData getMetaData() {
-		return metaData;
-	}
-
-	public void setMetaData(MetaData metaData) {
-		this.metaData = metaData;
-	}
 
 	public NeedTranslationModel(List<Message> modifiedMessages,
 			List<Message> newMessages, List<Message> deletedMessages,

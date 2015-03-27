@@ -3,37 +3,40 @@ package storage.tools_i18n.model;
 import java.util.ArrayList;
 import java.util.List;
 
-public enum Country {
-	
-	ENGLISH_UK("UK ENGLISH", "en-uk"), ENGLISH("US - ENGLISH", "en"), 
-	JAPANESE("JAPANESE", "ja"), ITALIAN("ITALIAN", "it"),
-	FRENCH("FRANCE - FRENCH", "fr"), GERMAN("GERMAN", "de"), SPANISH("SPANISH", "es");
-	
-	private Country(String ctryName, String countryCode){
-		this.counrtyCode=countryCode;
-		this.ctryName=ctryName;
+public class Country {
+
+	public Country(String name, String code) {
+		this.code = code+".json";
+		this.name = name;
 	}
-	private String counrtyCode;
-	private String ctryName;
-	public String getCounrtyCode() {
-		return counrtyCode;
+
+	private final String code;
+	private final String name;
+
+	public String getCode() {
+		return code;
 	}
-	public void setCounrtyCode(String counrtyCode) {
-		this.counrtyCode = counrtyCode;
+
+	public String getName() {
+		return name;
 	}
-	public String getCtryName() {
-		return ctryName;
+
+	private static List<Country> locals = new ArrayList();
+
+	public static Country ENGLISH;
+
+	public static void addLocal(String ctryName, String ctryCode) {
+		locals.add(new Country(ctryName, ctryCode));
 	}
-	public void setCtryName(String ctryName) {
-		this.ctryName = ctryName;
+
+	public static List<Country> locals() {
+		return locals;
 	}
-	public static List<Country> otherCountries(){
-		List<Country> otherCountries = new ArrayList<Country>();
-		for(Country country : Country.values()){
-			if(!country.getCounrtyCode().equals(ENGLISH.getCounrtyCode())){
-				otherCountries.add(country);
-			}
-		}
-		return otherCountries;
+
+	public static List<Country> values() {
+		List<Country> contries = new ArrayList();
+		contries.add(Country.ENGLISH);
+		contries.addAll(locals);
+		return contries;
 	}
 }
