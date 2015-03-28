@@ -1,6 +1,7 @@
 package storage.tools_i18n.main;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,28 +20,33 @@ public class Apply {
 	private static Logger log = Logger.getLogger(Apply.class.getName());
 
 	public static void main(String[] args) {
-		MetaData meta = TranslationUtil.downloadLatestCodes(
-				Configuration.GIT_URL, Configuration.DEFAULT_BRANCH);
-
-		List<String> jsonFolders = TranslationUtil.scanJsonFolders(
-				Configuration.GIT_URL, Country.ENGLISH.getCode());
-		for (String jsonFolder : jsonFolders) {
-			applyTranslate(meta, jsonFolder);
+		MetaData spreadsheetMetaData = TranslationUtil.readExcelMetaData(Configuration.TRANSLATED_SPREADSHEET, Configuration.SHEET_METADATA_NAME);
+		MetaData workspaceMetaData = TranslationUtil.downloadLatestCodes(Configuration.GIT_URL, Configuration.DEFAULT_BRANCH);
+		log.log(Level.INFO, "MetaData in the current workspace: "+workspaceMetaData);
+		boolean notApplyBefore =workspaceMetaData==null || StringUtil.isEmpty(workspaceMetaData.getApplyId()) || workspaceMetaData.getApplyId().equals("null");
+		boolean exportIdNotMatch = spreadsheetMetaData==null 
+				|| StringUtil.isEmpty(spreadsheetMetaData.getExportId()) 
+				|| !spreadsheetMetaData.getExportId().equals(workspaceMetaData.getExportId()); 
+		if(!notApplyBefore && exportIdNotMatch){
+			throw new RuntimeException("Metadata not match between "+Configuration.TRANSLATED_SPREADSHEET+" and "+Configuration.METADATA_FILE+" spreadsheet, please check.");
+		}
+		
+		Map<String, AnalysisDataModel> analysisTranslationData = TranslationUtil.loadDataForCompare();
+		Map<String, List<Message>> translatedMessages = TranslationUtil.readExcelFromTranslateTeam(Configuration.TRANSLATED_SPREADSHEET);
+		
+		for(String folderPath : analysisTranslationData.keySet()){
+			String moduleName = TranslationUtil.getSheetName(folderPath);
+			log.log(Level.INFO, "apply module "+moduleName+"...");
+			applyTranslate(folderPath, analysisTranslationData.get(folderPath), translatedMessages.get(moduleName));
 		}
 	}
 
-	private static void applyTranslate(MetaData meta, String jsonFolder) {
-		AnalysisDataModel analysisDataModel = TranslationUtil
-				.loadDataForCompare(meta, jsonFolder);
-
+	private static void applyTranslate(String folderPath, AnalysisDataModel analysisDataModel, List<Message> translatedMessages) {
+		log.log(Level.INFO, "apply folder "+folderPath+"...");
 		Map<String, String> englishPair = analysisDataModel.getEnglishPair();
 		Map<String, String> oldEnPair = analysisDataModel.getOldEnPair();
 		Map<String, Map<String, String>> otherLanguagesPreviousTranslatedPair = analysisDataModel
 				.getOtherLanguagesPreviousTranslatedPair();
-		String sheetName = TranslationUtil.getSheetName(jsonFolder);
-		List<Message> translatedMessages = TranslationUtil
-				.readExcelFromTranslateTeam(
-						Configuration.TRANSLATED_SPREADSHEET, sheetName);
 		Map<String, String> nonEnglishLocalePair = TranslationUtil
 				.checkFileConsistent(otherLanguagesPreviousTranslatedPair);
 		Map<String, String> survivedKeys = calculateApplyTranslationData(
@@ -74,7 +80,7 @@ public class Apply {
 				log.log(Level.WARNING,
 						"Message "
 								+ key
-								+ " will removed in locale_xx.json(locale_zh.json) since it not exists in locale_en.json.");
+								+ " will removed in this module since it not exists in locale_en.json.");
 				for (Country ohterCountry : Country.locals()) {
 					otherLanguagesPreviousTranslatedPair.get(
 							ohterCountry.getCode()).remove(key);
@@ -85,7 +91,7 @@ public class Apply {
 		for (String key : survivedKeys.keySet()) {
 			englishPair.put(key, survivedKeys.get(key));
 		}
-		updateAllJsonFile(jsonFolder, englishPair,
+		updateAllJsonFile(folderPath, englishPair,
 				otherLanguagesPreviousTranslatedPair);
 	}
 
@@ -138,8 +144,9 @@ public class Apply {
 	public static Map<String, String> calculateApplyTranslationData(
 			List<Message> translatedMessages, Map<String, String> englishPair,
 			Map<String, String> otherLocalePair, Map<String, String> oldEngPair) {
-		log.log(Level.INFO,
-				"Start calculate keys which can be updated in translation data......");
+		if(translatedMessages==null){
+			translatedMessages= new ArrayList<Message>();
+		}
 		Map<String, String> survivedKeys = new HashMap<String, String>();
 		Map<String, String> keysModifiedByTranslationTeam = new HashMap<String, String>();
 		for (Message translation : translatedMessages) {
@@ -172,12 +179,15 @@ public class Apply {
 				}
 			}
 		}
-		log.log(Level.WARNING, "Below values updated by translation team: ");
-		for (String key : keysModifiedByTranslationTeam.keySet()) {
-			log.log(Level.WARNING,
-					"\t" + key + "=" + englishPair.get(key)
-							+ "\n\t\tupdated to-->"
-							+ keysModifiedByTranslationTeam.get(key));
+		StringBuffer sb = new StringBuffer("Start calculate keys which can be updated in translation data:\n");
+		if(!keysModifiedByTranslationTeam.isEmpty()){
+			sb.append("\tBelow values updated by translation team:\n");
+			for (String key : keysModifiedByTranslationTeam.keySet()) {
+				sb.append("\t\t" + key + "=" + englishPair.get(key)
+						+ "\n\t\t\tupdated to-->"
+						+ keysModifiedByTranslationTeam.get(key));
+			}
+			log.log(Level.WARNING, sb.toString());
 		}
 		log.log(Level.INFO, survivedKeys.size()
 				+ " keys can be updated in translation data("

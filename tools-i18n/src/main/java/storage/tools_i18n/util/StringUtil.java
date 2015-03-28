@@ -3,7 +3,7 @@ package storage.tools_i18n.util;
 import java.util.Random;
 
 public class StringUtil {
-	public static final String DELIMETER="-------------------------------------------------";
+	public static final String DELIMETER="---";
 	/**
 	 * 产生随机字符串
 	 * 

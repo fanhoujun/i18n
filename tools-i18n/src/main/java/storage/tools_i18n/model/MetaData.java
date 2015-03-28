@@ -4,14 +4,18 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import storage.tools_i18n.util.StringUtil;
+
 public class MetaData {
 	private static Logger log = Logger.getLogger(MetaData.class.getName());
 	
-	public static final String META_COMMIT_ID="Commit Id";
+	public static final String META_EXPORT_ID="Export Id";
+	public static final String META_APPLY_ID="Apply Id";
 	public static final String META_CREATE_DATE="Created on";
 	public static final String META_CREATE_BY="Created by"; 
 	
-	private String commitId;
+	private String exportId;
+	private String applyId;
 	private String createDate;
 	private String createdBy;
 	private String workspaceCommitId;
@@ -22,14 +26,18 @@ public class MetaData {
 	public void setWorkspaceCommitId(String workspaceCommitId) {
 		this.workspaceCommitId = workspaceCommitId;
 	}
-	public String getCommitId() {
-		if(commitId==null || "".equals(commitId.trim())){
-			log.warning("Last Apply Translation CommitID not found, no previous codes will download!");
-		}
-		return commitId;
+
+	public String getExportId() {
+		return exportId;
 	}
-	public void setCommitId(String commitId) {
-		this.commitId = commitId;
+	public void setExportId(String exportId) {
+		this.exportId = exportId;
+	}
+	public String getApplyId() {
+		return applyId;
+	}
+	public void setApplyId(String applyId) {
+		this.applyId = applyId;
 	}
 	public String getCreateDate() {
 		return createDate;
@@ -47,9 +55,19 @@ public class MetaData {
 		Map<String, String> map = new HashMap<String, String>();
 		map.put(META_CREATE_DATE, this.createDate);
 		// update metadata.json field commit id with workspace commit id
-		map.put(META_COMMIT_ID, this.getWorkspaceCommitId());
+		map.put(META_APPLY_ID, this.applyId);
+		map.put(META_EXPORT_ID, this.exportId);
 		map.put(META_CREATE_BY, this.createdBy);
 		return map;
+	}
+	@Override
+	public String toString(){
+		StringBuffer sb = new StringBuffer();
+		sb.append(META_CREATE_DATE+"="+this.createDate)
+			.append(META_APPLY_ID+"="+this.applyId)
+			.append(META_EXPORT_ID+"="+this.exportId)
+			.append(META_CREATE_BY+"="+this.createdBy);
+		return sb.toString();
 	}
 	
 }

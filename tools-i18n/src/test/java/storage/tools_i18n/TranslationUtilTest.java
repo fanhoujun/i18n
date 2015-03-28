@@ -68,7 +68,7 @@ public class TranslationUtilTest {
 		File file = new File(Configuration.GIT_URL);
 		assertTrue(file.exists());
 		assertTrue(file.listFiles().length > 0);
-		assertNotNull(metadata.getCommitId());
+		assertNotNull(metadata.getWorkspaceCommitId());
 	}
 
 	// @Test

@@ -24,50 +24,42 @@ public class Export {
 	private static Logger log = Logger.getLogger(Export.class.getName());
 
 	public static void main(String[] args) {
-		// download the latest codes
-		MetaData meta = TranslationUtil.downloadLatestCodes(
-				Configuration.GIT_URL, Configuration.DEFAULT_BRANCH);
-
-		List<String> jsonFolders = TranslationUtil.scanJsonFolders(
-				Configuration.GIT_URL, Country.ENGLISH.getCode());
-
-		List<NeedTranslationModel> needTranslationModels = new ArrayList();
-		for (String jsonFolder : jsonFolders) {
-			AnalysisDataModel analysisDataModel = TranslationUtil
-					.loadDataForCompare(meta, jsonFolder);
-
-			// MetaData metaData = analysisDataModel.getMetaData();
-			Map<String, String> englishPair = analysisDataModel
-					.getEnglishPair();
-			Map<String, String> oldEnPair = analysisDataModel.getOldEnPair();
-			Map<String, Map<String, String>> otherLanguagesPreviousTranslatedPair = analysisDataModel
-					.getOtherLanguagesPreviousTranslatedPair();
-
+		Map<String, AnalysisDataModel> analysisTranslationData = TranslationUtil.loadDataForCompare();
+		
+		List<NeedTranslationModel> needTranslationModels = new ArrayList<NeedTranslationModel>();
+		for(String folderPath : analysisTranslationData.keySet()){
+			log.log(Level.INFO, StringUtil.DELIMETER+"Parsing Module "+folderPath);
+			AnalysisDataModel analysisDataModel = analysisTranslationData.get(folderPath); 
+					
 			NeedTranslationModel needTranslationModel = prepareNeedTranslationData(
-					oldEnPair, englishPair,
-					otherLanguagesPreviousTranslatedPair);
-			needTranslationModel.setSheetName(TranslationUtil
-					.getSheetName(jsonFolder));
+					analysisDataModel.getOldEnPair(), 
+					analysisDataModel.getEnglishPair(),
+					analysisDataModel.getOtherLanguagesPreviousTranslatedPair());
+			
+			needTranslationModel.setSheetName(TranslationUtil.getSheetName(folderPath));
 			needTranslationModels.add(needTranslationModel);
 		}
-		meta.setCreateDate(new SimpleDateFormat("dd MMM yyyy HH:mm",
-				Locale.ENGLISH).format(new Date()));
-		meta.setCreatedBy(Configuration.METADATA_CREATE_BY);
-		TranslationUtil.generateNeedTranslateExcel(Configuration.GIT_URL
-				+ File.separator + Configuration.EXPORT_EXCEL_NAME,
-				needTranslationModels, meta);
+		// switch to current version on the configured branch
+		log.log(Level.INFO, StringUtil.DELIMETER+"switch to current version on the configured branch");
+		MetaData metaData = TranslationUtil.downloadLatestCodes(Configuration.GIT_URL, Configuration.DEFAULT_BRANCH);
+		
+		metaData.setCreateDate(new SimpleDateFormat("dd MMM yyyy HH:mm",Locale.ENGLISH).format(new Date()));
+		metaData.setCreatedBy(Configuration.METADATA_CREATE_BY);
+		metaData.setExportId(metaData.getWorkspaceCommitId());
+		
 		// generate metadata.json
-		TranslationUtil.generateJsonFile(meta.converToMap(),
-				Configuration.GIT_URL + File.separator
-						+ Configuration.METADATA_FILE);
-
+		TranslationUtil.generateJsonFile(metaData.converToMap(),
+				Configuration.GIT_URL + File.separator + Configuration.METADATA_FILE);
+		String outputFile = Configuration.GIT_URL+ File.separator + Configuration.EXPORT_EXCEL_NAME;
+		// generate spreadsheet
+		TranslationUtil.generateNeedTranslateExcel(outputFile, needTranslationModels, metaData);
+		log.log(Level.INFO, "Successfully: Export Need Translated Messages in spreadsheet "+outputFile);
 	}
 
 	public static NeedTranslationModel prepareNeedTranslationData(
 			Map<String, String> oldEnPair,
 			Map<String, String> englishPair,
 			Map<String, Map<String, String>> otherLanguagesPreviousTranslatedPair) {
-		log.log(Level.INFO, "Start preparing need translation data......");
 
 		Map<String, String> nonEnglishLocalePair = TranslationUtil
 				.checkFileConsistent(otherLanguagesPreviousTranslatedPair);
@@ -140,7 +132,6 @@ public class Export {
 				+ "messages modified\n\t" + deletedMessages.size()
 				+ " messages deleted\n\t" + newMessages.size()
 				+ " messages added\n");
-		log.log(Level.INFO, StringUtil.DELIMETER);
 		return new NeedTranslationModel(modifiedMessages, newMessages,
 				deletedMessages, noChangeMessages);
 	}
