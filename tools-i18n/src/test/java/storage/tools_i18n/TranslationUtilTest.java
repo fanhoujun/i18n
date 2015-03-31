@@ -16,7 +16,7 @@ import org.junit.Test;
 import storage.tools_i18n.model.MetaData;
 import storage.tools_i18n.util.Configuration;
 import storage.tools_i18n.util.IoUtil;
-import storage.tools_i18n.util.TranslationUtil;
+import storage.tools_i18n.util.ResourceUtil;
 
 public class TranslationUtilTest {
 
@@ -52,7 +52,7 @@ public class TranslationUtilTest {
 	@Test
 	public void downloadPreviousCodes() {
 		String commitId = "76fb7c4db49b3eb98dfab5d0291a7f32dd371c59";
-		TranslationUtil.downloadPreviousCodes(commitId);
+		ResourceUtil.downloadPreviousCodes(commitId);
 		File file = new File(Configuration.GIT_URL);
 		assertTrue(file.exists());
 		assertTrue(file.listFiles().length > 0);
@@ -63,7 +63,7 @@ public class TranslationUtilTest {
 		MetaData metadata = new MetaData();
 
 		String commitId = "origin/development";
-		metadata = TranslationUtil.downloadLatestCodes(Configuration.GIT_URL,
+		metadata = ResourceUtil.downloadLatestCodes(Configuration.GIT_URL,
 				commitId);
 		File file = new File(Configuration.GIT_URL);
 		assertTrue(file.exists());
@@ -100,9 +100,9 @@ public class TranslationUtilTest {
 		String jsonFilePath = UNITTEST_FILE_PATH + File.separator
 				+ "unit-test.json";
 
-		TranslationUtil.generateJsonFile(map, jsonFilePath);
+		ResourceUtil.generateJsonFile(map, jsonFilePath);
 
-		map = TranslationUtil.readJSON(jsonFilePath);
+		map = ResourceUtil.readJSON(jsonFilePath);
 
 		assertTrue(map.size() == 3);
 		assertEquals(map.get("NEO.BOOTSTRAP.LOADER_ERROR"), "Loader Error:");
