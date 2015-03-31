@@ -137,21 +137,18 @@ public class ExcelUtil {
 		CellStyle style = createSubSectionStyle(wb, titleColor);
 		rowNum = createTitle(sheet, rowNum, style, title);
 		style = createMessageItemStyle(wb);
-		CellStyle oldStyle=createOldItemStyle(wb);
+		CellStyle oldStyle = createOldItemStyle(wb);
 		for (Message message : messages) {
 			Row row = sheet.createRow(rowNum++);
 			int col = 0;
 			setCell(row.createCell(col++), message.getKey(), style);
-			if (StringUtil.isEmpty(message.getModifiedEnVal())) {
-				message.setModifiedEnVal(message.getEnVal());
-				message.setEnVal(null);
-			}
-			setCell(row.createCell(col++), message.getEnVal(), oldStyle);
-			setCell(row.createCell(col++), message.getModifiedEnVal(), style);
-			boolean haveLocalVal = message.getLanguagesVal() != null;
+			setCell(row.createCell(col++),
+					message.isChanged() ? message.getOldEnVal() : "--", oldStyle);
+			setCell(row.createCell(col++), message.getEnVal(), style);
+			boolean haveLocalVal = message.getLocals() != null;
 			for (Country country : Country.locals()) {
 				setCell(row.createCell(col++), haveLocalVal ? message
-						.getLanguagesVal().get(country.getCode()) : null, style);
+						.getLocals().get(country.getCode()) : null, style);
 			}
 		}
 		createEmptyRow(sheet, rowNum++);

@@ -7,41 +7,43 @@ import storage.tools_i18n.model.Country;
 
 public class Configuration {
 
-	//private static final String CONFIG_FILE = "config.na.properties";// na
-
-	private static final String CONFIG_FILE="config.storage.properties";//stroage
-
 	public static final String SHEET_METADATA_NAME = "meta-data";
 
-	public static final String MODIFIED_EXCEL_TITLE="Sanity check needed for modified messages";
-	public static final String NEW_EXCEL_TITLE="Messages to be translated";
-	public static final String DELETED_EXCEL_TITLE="FYI no action needed, deleted messages";
-	public static final String NO_CHANGE_EXCEL_TITLE="FYI no action needed, no change message";
-	
-	public static final String METADATA_FILE;
+	public static final String MODIFIED_EXCEL_TITLE = "Sanity check needed for modified messages";
+	public static final String NEW_EXCEL_TITLE = "Messages to be translated";
+	public static final String DELETED_EXCEL_TITLE = "FYI no action needed, deleted messages";
+	public static final String NO_CHANGE_EXCEL_TITLE = "FYI no action needed, no change message";
 
-	public static final String EXPORT_EXCEL_NAME;
+	public static String METADATA_FILE;
 
-	public static final String DEFAULT_BRANCH;
+	public static String EXPORT_EXCEL_NAME;
 
-	public static final String GIT_URL;
+	public static String DEFAULT_BRANCH;
 
-	public static final String TRANSLATED_SPREADSHEET;
+	public static String GIT_URL;
 
-	public static final String METADATA_CREATE_BY;
-	
-	public static final String[] IGNORE_KEY_WRODS;
+	public static String TRANSLATED_XLS;
+
+	public static String METADATA_CREATE_BY;
+
+	public static String[] IGNORE_KEY_WRODS;
 
 	public static final int LANGUAGE_ROW_NUM = 0;
-	
-	public static final int KEY_COLUMN_NUM =0;
 
-	static {
+	public static final int KEY_COLUMN_NUM = 0;
 
+	public static void init(String[] args) {
+		String proj;
+		if (args.length > 0) {
+			proj = args[0];
+		} else {
+			proj = "na";
+		}
 		Properties pps = new Properties();
+
 		try {
-			pps.load(Configuration.class.getClassLoader()
-					.getResourceAsStream(CONFIG_FILE));
+			pps.load(Configuration.class.getClassLoader().getResourceAsStream(
+					"config." + proj + ".properties"));
 		} catch (Exception e) {
 			throw new RuntimeException("Read config.properties failed: " + e);
 		}
@@ -53,9 +55,9 @@ public class Configuration {
 		String translated = pps.getProperty("TRANSLATED_SPREADSHEET");
 
 		if (new File(translated).exists()) {
-			TRANSLATED_SPREADSHEET = translated;
+			TRANSLATED_XLS = translated;
 		} else {
-			TRANSLATED_SPREADSHEET = GIT_URL + File.separator + translated;
+			TRANSLATED_XLS = GIT_URL + File.separator + translated;
 		}
 		METADATA_CREATE_BY = pps.getProperty("METADATA_CREATE_BY");
 		IGNORE_KEY_WRODS = pps.getProperty("IGNORE_KEY_WRODS").split(",");

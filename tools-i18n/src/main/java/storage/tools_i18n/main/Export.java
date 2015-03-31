@@ -4,18 +4,16 @@ import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import storage.tools_i18n.model.AnalysisDataModel;
 import storage.tools_i18n.model.Country;
+import storage.tools_i18n.model.FolderModel;
 import storage.tools_i18n.model.Message;
 import storage.tools_i18n.model.MetaData;
-import storage.tools_i18n.model.NeedTranslationModel;
+import storage.tools_i18n.model.SheetModel;
 import storage.tools_i18n.util.Configuration;
 import storage.tools_i18n.util.StringUtil;
 import storage.tools_i18n.util.TranslationUtil;
@@ -24,116 +22,77 @@ public class Export {
 	private static Logger log = Logger.getLogger(Export.class.getName());
 
 	public static void main(String[] args) {
-		Map<String, AnalysisDataModel> analysisTranslationData = TranslationUtil.loadDataForCompare();
-		
-		List<NeedTranslationModel> needTranslationModels = new ArrayList<NeedTranslationModel>();
-		for(String folderPath : analysisTranslationData.keySet()){
-			log.log(Level.INFO, StringUtil.DELIMETER+"Parsing Module "+folderPath);
-			AnalysisDataModel analysisDataModel = analysisTranslationData.get(folderPath); 
-					
-			NeedTranslationModel needTranslationModel = prepareNeedTranslationData(
-					analysisDataModel.getOldEnPair(), 
-					analysisDataModel.getEnglishPair(),
-					analysisDataModel.getOtherLanguagesPreviousTranslatedPair());
-			
-			needTranslationModel.setSheetName(TranslationUtil.getSheetName(folderPath));
-			needTranslationModels.add(needTranslationModel);
+		Configuration.init(args);
+		MetaData meta = TranslationUtil.downloadLatestCodes(
+				Configuration.GIT_URL, Configuration.DEFAULT_BRANCH);
+		List<FolderModel> analysisTranslationData = TranslationUtil
+				.loadDataForCompare(true, meta);
+
+		List<SheetModel> sheetModels = new ArrayList<SheetModel>();
+		for (FolderModel folderModel : analysisTranslationData) {
+			String folder = folderModel.getFolder();
+			log.info(StringUtil.DELIMETER + "Parsing Module " + folder);
+			sheetModels.add(toSheetModel(folderModel));
 		}
-		// switch to current version on the configured branch
-		log.log(Level.INFO, StringUtil.DELIMETER+"switch to current version on the configured branch");
-		MetaData metaData = TranslationUtil.downloadLatestCodes(Configuration.GIT_URL, Configuration.DEFAULT_BRANCH);
-		
-		metaData.setCreateDate(new SimpleDateFormat("dd MMM yyyy HH:mm",Locale.ENGLISH).format(new Date()));
-		metaData.setCreatedBy(Configuration.METADATA_CREATE_BY);
-		metaData.setExportId(metaData.getWorkspaceCommitId());
-		
+
+		meta.setCreateDate(new SimpleDateFormat("dd MMM yyyy HH:mm",
+				Locale.ENGLISH).format(new Date()));
+		meta.setCreatedBy(Configuration.METADATA_CREATE_BY);
+		meta.setExportId(meta.getWorkspaceCommitId());
+
 		// generate metadata.json
-		TranslationUtil.generateJsonFile(metaData.converToMap(),
-				Configuration.GIT_URL + File.separator + Configuration.METADATA_FILE);
-		String outputFile = Configuration.GIT_URL+ File.separator + Configuration.EXPORT_EXCEL_NAME;
+		TranslationUtil.generateJsonFile(meta.converToMap(),
+				Configuration.GIT_URL + File.separator
+						+ Configuration.METADATA_FILE);
+		String outputFile = Configuration.GIT_URL + File.separator
+				+ Configuration.EXPORT_EXCEL_NAME;
+		
 		// generate spreadsheet
-		TranslationUtil.generateNeedTranslateExcel(outputFile, needTranslationModels, metaData);
-		log.log(Level.INFO, "Successfully: Export Need Translated Messages in spreadsheet "+outputFile);
+		TranslationUtil.export(outputFile, sheetModels, meta);
+		log.info("Successfully: Export Need Translated Messages in spreadsheet "
+				+ outputFile);
 	}
 
-	public static NeedTranslationModel prepareNeedTranslationData(
-			Map<String, String> oldEnPair,
-			Map<String, String> englishPair,
-			Map<String, Map<String, String>> otherLanguagesPreviousTranslatedPair) {
+	private static SheetModel toSheetModel(FolderModel model) {
 
-		Map<String, String> nonEnglishLocalePair = TranslationUtil
-				.checkFileConsistent(otherLanguagesPreviousTranslatedPair);
-		log.log(Level.INFO,
-				"\t Calculating not changed, modified, deleted, added messages......");
-		List<Message> modifiedMessages = new ArrayList<Message>(), newMessages = new ArrayList<Message>(), deletedMessages = new ArrayList<Message>(), noChangeMessages = new ArrayList<Message>();
+		log.info("\t Calculating not changed, modified, deleted, added messages......");
+		List<Message> modifiedMessages = new ArrayList<Message>();
+		List<Message> newMessages = new ArrayList<Message>();
+		List<Message> noChangeMessages = new ArrayList<Message>();
 
-		for (String key : oldEnPair.keySet()) {
-			String previousEnValue = oldEnPair.get(key);
-			Map<String, String> languagesVal = new HashMap<String, String>();
-
-			boolean containsInCurrentVersion = englishPair.containsKey(key); // key
-																				// contains
-																				// in
-																				// current
-																				// version
-			boolean translatedBefore = nonEnglishLocalePair.containsKey(key); // key
-																				// translated
-																				// before
-			if (translatedBefore) {
-				for (Country country : Country.values()) {
-					Map<String, String> localTranslated = otherLanguagesPreviousTranslatedPair
-							.get(country.getCode());
-					String translatedValue = "";
-					if (localTranslated != null && translatedValue != null) {
-						translatedValue = localTranslated.get(key);
-					} else {
-						log.log(Level.WARNING,
-								"Translation of Key "
-										+ key
-										+ " not founded due to the previous reason: Keys between different locale files not equals");
-					}
-					languagesVal.put(country.getCode(), translatedValue);
-				}
-			}
-
-			String currentEnValue = englishPair.get(key);
-			if (containsInCurrentVersion) {
-				if (translatedBefore) {
-					if (previousEnValue.equals(currentEnValue)) {
-						noChangeMessages.add(new Message(key, previousEnValue,
-								languagesVal));// no changed messages
-					} else {
-						modifiedMessages.add(new Message(key, previousEnValue,
-								languagesVal, currentEnValue)); // modified
-					}
-				} else {
-					newMessages.add(new Message(key, currentEnValue));
-				}
-			} else if (translatedBefore) {
-				deletedMessages.add(new Message(key, previousEnValue,
-						languagesVal));
+		for (Map.Entry<String, String> me : model.getEnglishPair().entrySet()) {
+			String key = me.getKey();
+			String val = me.getValue();
+			Message message = new Message(key, val);
+			message.setOldEnVal(model.getOldEnPair().get(key));
+			message.setLocals(model.getLocals(key));
+			if (message.getLocals().size() < Country.locals().size()) {
+				newMessages.add(message);
+			} else if (message.isChanged()) {
+				modifiedMessages.add(message);
 			} else {
-				log.log(Level.WARNING,
-						"Translation Key: "
-								+ key
-								+ "="
-								+ previousEnValue
-								+ " added after applying translation data last time and then deleted now. It would not displayed in the generated spreadsheet.");
+				noChangeMessages.add(message);
 			}
 		}
 
-		for (String key : englishPair.keySet()) {
-			if (!oldEnPair.containsKey(key)) {
-				newMessages.add(new Message(key, englishPair.get(key)));
+		List<Message> deletedMessages = new ArrayList<Message>();
+		for (Map.Entry<String, String> me : model.getOldEnPair().entrySet()) {
+			String key = me.getKey();
+			if (model.getEnglishPair().containsKey(key)) {
+				continue;
 			}
+			String val = me.getValue();
+			Message message = new Message(key, val);
+			message.setOldEnVal(model.getOldEnPair().get(key));
+			message.setLocals(model.getLocals(key));
+			deletedMessages.add(message);
 		}
-		log.log(Level.INFO, "\t" + noChangeMessages.size()
-				+ " messages not changed\n\t" + modifiedMessages.size()
-				+ "messages modified\n\t" + deletedMessages.size()
-				+ " messages deleted\n\t" + newMessages.size()
-				+ " messages added\n");
-		return new NeedTranslationModel(modifiedMessages, newMessages,
-				deletedMessages, noChangeMessages);
+		log.info("\t" + noChangeMessages.size() + " messages not changed\n\t"
+				+ modifiedMessages.size() + "messages modified\n\t"
+				+ deletedMessages.size() + " messages deleted\n\t"
+				+ newMessages.size() + " messages added\n");
+		return new SheetModel(modifiedMessages, newMessages, deletedMessages,
+				noChangeMessages, model.getSheetName());
 	}
 
 }

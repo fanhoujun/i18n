@@ -19,6 +19,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import net.sf.json.JSONException;
+import net.sf.json.JSONNull;
 import net.sf.json.JSONObject;
 
 import org.apache.poi.ss.usermodel.Cell;
@@ -36,11 +37,11 @@ import org.eclipse.jgit.api.errors.InvalidRemoteException;
 import org.eclipse.jgit.api.errors.TransportException;
 import org.eclipse.jgit.revwalk.RevCommit;
 
-import storage.tools_i18n.model.AnalysisDataModel;
+import storage.tools_i18n.model.FolderModel;
 import storage.tools_i18n.model.Country;
 import storage.tools_i18n.model.Message;
 import storage.tools_i18n.model.MetaData;
-import storage.tools_i18n.model.NeedTranslationModel;
+import storage.tools_i18n.model.SheetModel;
 
 public class TranslationUtil {
 
@@ -56,7 +57,10 @@ public class TranslationUtil {
 	 * @throws InvalidRemoteException
 	 */
 	public static void downloadPreviousCodes(String commitId) {
-		log.log(Level.INFO, StringUtil.DELIMETER+"Start donwloading previous applied translations version[commitId="+commitId+"]");
+		log.log(Level.INFO,
+				StringUtil.DELIMETER
+						+ "Start donwloading previous applied translations version[commitId="
+						+ commitId + "]");
 		checkoutProject(Configuration.GIT_URL, commitId);
 	}
 
@@ -71,10 +75,13 @@ public class TranslationUtil {
 	public static MetaData downloadLatestCodes(String repoURL, String branchName) {
 		String metadataFilePath = null;
 		File metadataFile = null;
-		log.log(Level.INFO, StringUtil.DELIMETER+"Donwloading...");
+		log.log(Level.INFO, StringUtil.DELIMETER + "Donwloading...");
 		MetaData metadata = new MetaData();
 		metadata.setWorkspaceCommitId(checkoutProject(repoURL, branchName));
-		log.log(Level.INFO, StringUtil.DELIMETER+"Donwloaded HEAD version[commitId="+metadata.getWorkspaceCommitId()+"] from " + repoURL + "[branch=" + branchName + "]");
+		log.log(Level.INFO,
+				StringUtil.DELIMETER + "Donwloaded HEAD version[commitId="
+						+ metadata.getWorkspaceCommitId() + "] from " + repoURL
+						+ "[branch=" + branchName + "]");
 		List<String> files = scanJsonFolders(repoURL,
 				Configuration.METADATA_FILE);
 		if (files.size() > 0) {
@@ -112,12 +119,13 @@ public class TranslationUtil {
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
-		StringBuffer sb = new StringBuffer(StringUtil.DELIMETER+"Parsing file: ");
+		StringBuffer sb = new StringBuffer(StringUtil.DELIMETER
+				+ "Parsing file: ");
 		sb.append(jsonFilePath);
-		if(result.isEmpty()){
-			sb.append("\t"+ jsonFilePath +" is empty");
+		if (result.isEmpty()) {
+			sb.append("\t" + jsonFilePath + " is empty");
 		}
-		log.log(Level.INFO,  sb.toString());
+		log.log(Level.INFO, sb.toString());
 		return result;
 	}
 
@@ -132,7 +140,7 @@ public class TranslationUtil {
 			}
 			if (value instanceof JSONObject) {
 				parseJsonObjectToMap((JSONObject) value, key, map);
-			} else {
+			} else if (!value.equals(JSONNull.getInstance())) {
 				map.put(key, value.toString());
 			}
 		}
@@ -145,26 +153,28 @@ public class TranslationUtil {
 	 * @param sheetName
 	 * @return map Map<language, Map<keys, values>>
 	 */
-	public static Map<String, List<Message>> readExcelFromTranslateTeam(String excelFilePath) {
+	public static Map<String, List<Message>> readExcelFromTranslateTeam(
+			String excelFilePath) {
 		Map<String, List<Message>> modulesTranslated = new HashMap<String, List<Message>>();
-		
+
 		Workbook wb = null;
 		try {
 			wb = WorkbookFactory.create(new FileInputStream(excelFilePath));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		int totalSheet= wb.getNumberOfSheets();
-		for(int idx=0;idx<totalSheet;idx++){
+		int totalSheet = wb.getNumberOfSheets();
+		for (int idx = 0; idx < totalSheet; idx++) {
 			Sheet sheet = wb.getSheetAt(idx);
-			if(Configuration.SHEET_METADATA_NAME.equals(sheet.getSheetName())){
+			String sheetName = sheet.getSheetName();
+			if (Configuration.SHEET_METADATA_NAME.equals(sheetName)) {
 				continue;
 			}
-			log.log(Level.INFO, "Parsing modules "+sheet.getSheetName()+"...");
-			
+			log.log(Level.INFO, "Parsing modules " + sheetName + "...");
+
 			List<Message> allTranslatedMessages = new ArrayList<Message>();
 			Map<String, Integer> languageColumeMap = new HashMap<String, Integer>();
-			
+
 			Row row = sheet.getRow(Configuration.LANGUAGE_ROW_NUM);
 			int lastColumn = row.getLastCellNum();
 			for (int cn = 0; cn < lastColumn; cn++) {
@@ -176,23 +186,24 @@ public class TranslationUtil {
 				}
 			}
 			if (languageColumeMap.size() != Country.values().size()) {
-				log.log(Level.SEVERE, "Country Name defined in Country.java not match names in the spreadsheet at row#"+(Configuration.LANGUAGE_ROW_NUM + 1));
+				log.log(Level.SEVERE,
+						"Country Name defined in Country.java not match names in the spreadsheet at row#"
+								+ (Configuration.LANGUAGE_ROW_NUM + 1));
 			}
 			sheet.setColumnWidth(Configuration.KEY_COLUMN_NUM, 0x24);
-			for (int i = Configuration.LANGUAGE_ROW_NUM+1, len = sheet.getLastRowNum(); i < len; i++) {
+			for (int i = Configuration.LANGUAGE_ROW_NUM + 1, len = sheet
+					.getLastRowNum(); i < len; i++) {
 				row = sheet.getRow(i);
-				if(row==null){
+				if (row == null) {
 					continue;
 				}
 				Cell cell = row.getCell(Configuration.KEY_COLUMN_NUM);
 				String key = getCellValue(cell);
-				if (StringUtil.isEmpty(key) 
-						|| Configuration.MODIFIED_EXCEL_TITLE.equals(key) 
-						|| Configuration.NEW_EXCEL_TITLE.equals(key)) {
-					continue;
-				}
-				if(Configuration.NO_CHANGE_EXCEL_TITLE.equals(key)
-						|| Configuration.DELETED_EXCEL_TITLE.equals(key)){
+				if (StringUtil.isEmpty(key)
+						|| Configuration.MODIFIED_EXCEL_TITLE.equals(key)
+						|| Configuration.NEW_EXCEL_TITLE.equals(key)
+						|| Configuration.NO_CHANGE_EXCEL_TITLE.equals(key)
+						|| Configuration.DELETED_EXCEL_TITLE.equals(key)) {
 					break;
 				}
 				Message message = new Message();
@@ -201,15 +212,17 @@ public class TranslationUtil {
 						.get(Country.ENGLISH.getCode()))));
 				Map<String, String> otherTranslatedValues = new HashMap<String, String>();
 				for (Country country : Country.locals()) {
-					otherTranslatedValues.put(country.getCode(), getCellValue(
-							row.getCell(languageColumeMap.get(country.getCode()))));
+					otherTranslatedValues.put(country.getCode(),
+							getCellValue(row.getCell(languageColumeMap
+									.get(country.getCode()))));
 				}
-				message.setLanguagesVal(otherTranslatedValues);
+				message.setLocals(otherTranslatedValues);
 				allTranslatedMessages.add(message);
 			}
 			sheet.setColumnWidth(Configuration.KEY_COLUMN_NUM, 0);
-			log.log(Level.INFO, allTranslatedMessages.size()+" translated messages founded in module "+sheet.getSheetName());
-			modulesTranslated.put(sheet.getSheetName(), allTranslatedMessages);
+			log.log(Level.INFO, allTranslatedMessages.size()
+					+ " translated messages founded in module " + sheetName);
+			modulesTranslated.put(sheetName, allTranslatedMessages);
 		}
 		return modulesTranslated;
 	}
@@ -259,7 +272,7 @@ public class TranslationUtil {
 	 */
 	public static List<String> scanJsonFolders(String rootFolder,
 			String fileName) {
-		log.log(Level.INFO, StringUtil.DELIMETER+"Searching...");
+		log.log(Level.INFO, StringUtil.DELIMETER + "Searching...");
 		List<String> folderPaths = new ArrayList<String>();
 		traverseFileInDirectory(rootFolder, fileName, folderPaths);
 
@@ -280,11 +293,13 @@ public class TranslationUtil {
 			}
 		}
 		StringBuffer sb = new StringBuffer("\nSearching file ");
-		sb.append(fileName).append(" in folder ").append(rootFolder).append("\n");
+		sb.append(fileName).append(" in folder ").append(rootFolder)
+				.append("\n");
 		for (String path : folderPaths) {
-			sb.append("\t"+path + File.separator + fileName +"\n");
+			sb.append("\t" + path + File.separator + fileName + "\n");
 		}
-		sb.append(StringUtil.DELIMETER+"End searching folders. " + folderPaths.size() + " folders found.\n");
+		sb.append(StringUtil.DELIMETER + "End searching folders. "
+				+ folderPaths.size() + " folders found.\n");
 		log.log(Level.INFO, sb.toString());
 		return folderPaths;
 	}
@@ -314,30 +329,18 @@ public class TranslationUtil {
 	 * @return String log info, warning message
 	 * @throws IOException
 	 */
-	public static void generateNeedTranslateExcel(String outputFilePath,
-			List<NeedTranslationModel> models, MetaData excelMetaData) {
-		log.log(Level.INFO, StringUtil.DELIMETER+"Generating spreadsheet " + outputFilePath + "......");
+	public static void export(String outputFilePath,
+			List<SheetModel> models, MetaData excelMetaData) {
+		log.log(Level.INFO, StringUtil.DELIMETER + "Generating spreadsheet "
+				+ outputFilePath + "......");
 		Workbook workbook = new XSSFWorkbook();
-		
-		for (NeedTranslationModel model : models) {
+
+		for (SheetModel model : models) {
 			Sheet sheet = workbook.createSheet(model.getSheetName());
 			sheet.setDefaultColumnWidth(0x24);
 			int rowNum = 0;
 
 			rowNum = ExcelUtil.creatColumnHeaders(sheet, rowNum, workbook);
-
-			List<Message> msgs = new ArrayList<Message>();
-			for (Message msg : model.getNoChangeMessages()) {
-				String uk = msg.getLanguagesVal().get("en_gb.json");
-				if (msg.getEnVal().equals(uk)) {
-					msgs.add(msg);
-				} else {
-					msg.setModifiedEnVal(msg.getEnVal());
-					msg.setEnVal(uk);
-					model.getModifiedMessages().add(msg);
-				}
-			}
-			model.setNoChangeMessages(msgs);
 
 			rowNum = ExcelUtil.createPart(sheet, rowNum,
 					model.getModifiedMessages(),
@@ -348,8 +351,7 @@ public class TranslationUtil {
 					IndexedColors.ORANGE.index);
 			rowNum = ExcelUtil.createPart(sheet, rowNum,
 					model.getDeletedMessages(),
-					Configuration.DELETED_EXCEL_TITLE,
-					IndexedColors.RED.index);
+					Configuration.DELETED_EXCEL_TITLE, IndexedColors.RED.index);
 			rowNum = ExcelUtil.createPart(sheet, rowNum,
 					model.getNoChangeMessages(),
 					Configuration.NO_CHANGE_EXCEL_TITLE,
@@ -378,7 +380,7 @@ public class TranslationUtil {
 	 */
 	public static void generateJsonFile(Map<String, String> pairs,
 			String jsonFilePath) {
-		log.log(Level.INFO, StringUtil.DELIMETER+"Generating " + jsonFilePath);
+		log.log(Level.INFO, StringUtil.DELIMETER + "Generating " + jsonFilePath);
 		JSONObject json = new JSONObject();
 		for (Entry<String, String> entry : pairs.entrySet()) {
 			String key = entry.getKey();
@@ -453,140 +455,100 @@ public class TranslationUtil {
 		return commitId;
 	}
 
-	public static String getSheetName(String jsonFolder) {
-		String path = jsonFolder.substring(Configuration.GIT_URL.length())
-				.replaceAll("[\\\\/]+", "_")+"_";
-		if(Configuration.IGNORE_KEY_WRODS==null || Configuration.IGNORE_KEY_WRODS.length==0){
-			return path;
-		}
-		for(String ignoreKeyword :Configuration.IGNORE_KEY_WRODS){
-			if(ignoreKeyword!=null){
-				path = path.replaceAll("_" + ignoreKeyword.trim() + "_", "_");
-			}
-		}
-		return path.replaceAll("_+", "");
-	}
 	/**
 	 * 
+	 * @param meta
 	 * @return Map Key is the folderPath
 	 */
-	public static Map<String, AnalysisDataModel> loadDataForCompare() {
-		// download the latest codes
-		MetaData meta = TranslationUtil.downloadLatestCodes(Configuration.GIT_URL, Configuration.DEFAULT_BRANCH);
-		//scan current version folder structure
-		List<String> jsonFolders = TranslationUtil.scanJsonFolders(Configuration.GIT_URL, Country.ENGLISH.getCode());
-		
-		Map<String, AnalysisDataModel> analysisTranslationData= new HashMap<String, AnalysisDataModel>();
+	public static List<FolderModel> loadDataForCompare(boolean export,
+			MetaData meta) {
+		// scan current version folder structure
+		List<String> jsonFolders = TranslationUtil.scanJsonFolders(
+				Configuration.GIT_URL, Country.ENGLISH.getCode());
+
+		List<FolderModel> analysisTranslationData = new ArrayList();
 		Set<String> currentModules = new HashSet<String>();
 		// read current version English data
 		for (String jsonFolder : jsonFolders) {
 			currentModules.add(jsonFolder);
-			Map<String, String> englishPair = TranslationUtil.readAllKeys(jsonFolder, Country.ENGLISH);
-			AnalysisDataModel analysisDataModel = new AnalysisDataModel();
+			Map<String, String> englishPair = TranslationUtil.readAllKeys(
+					jsonFolder, Country.ENGLISH);
+			FolderModel analysisDataModel = new FolderModel();
 			analysisDataModel.setEnglishPair(englishPair);
-			//avoid NullPointerException
+			// avoid NullPointerException
 			analysisDataModel.setOldEnPair(new HashMap<String, String>());
-			analysisDataModel.setOtherLanguagesPreviousTranslatedPair(new HashMap<String, Map<String, String>>());
-			analysisTranslationData.put(jsonFolder, analysisDataModel);
+			analysisDataModel.setFolder(jsonFolder);
+			analysisDataModel
+					.setOtherLanguagesPreviousTranslatedPair(new HashMap<String, Map<String, String>>());
+			analysisTranslationData.add(analysisDataModel);
 		}
-		if(currentModules.size()!=jsonFolders.size()){
-			throw new RuntimeException("Module name duplicated after simplified, Please modify the configuration \"IGNORE_KEY_WRODS\" in the properties file and run this tool again."
-					+ "If it not works, please delete the keywords and run this tool again, thanks.");
+		if (currentModules.size() != jsonFolders.size()) {
+			throw new RuntimeException(
+					"Module name duplicated after simplified, Please modify the configuration \"IGNORE_KEY_WRODS\" in the properties file and run this tool again."
+							+ "If it not works, please delete the keywords and run this tool again, thanks.");
 		}
 		// if applied translation before, download the last applied version
-		String lastAppliedCommitId = meta.getApplyId();
-		if (!StringUtil.isEmpty(lastAppliedCommitId) && !lastAppliedCommitId.equals("null")) {
-			TranslationUtil.downloadPreviousCodes(lastAppliedCommitId);
-			//scan previous version folder structure
-			jsonFolders = TranslationUtil.scanJsonFolders(Configuration.GIT_URL, Country.ENGLISH.getCode());
-			for (String jsonFolder : jsonFolders) {
-				AnalysisDataModel analysisDataModel = analysisTranslationData.get(jsonFolder);
-				Map<String, String> oldEnPair = new HashMap<String, String>();
-				Map<String, Map<String, String>> otherLanguagesTranslatedPair = new HashMap<String, Map<String, String>>();
-				
-				if(analysisDataModel!=null){ 
-					oldEnPair = TranslationUtil.readAllKeys(jsonFolder, Country.ENGLISH);
-					
-					for (Country otherCountries : Country.locals()) {
-						otherLanguagesTranslatedPair.put(otherCountries.getCode(),TranslationUtil.readAllKeys(jsonFolder, otherCountries));
-					}
-					analysisDataModel.setOldEnPair(oldEnPair);
-					analysisDataModel.setOtherLanguagesPreviousTranslatedPair(otherLanguagesTranslatedPair);
-				}else{// folder structure changed between the two version
-					log.warning("Folder structrue changed bweteen the HEAD version[commitId="+meta.getExportId()+"] "
-							+ "and the previous applied translations version[commitId="+lastAppliedCommitId+"]\tFolder "+jsonFolder+" does not exists in the HEAD version");
-					analysisDataModel = new AnalysisDataModel();
-					analysisTranslationData.put(jsonFolder, analysisDataModel);
-				}
-				analysisDataModel.setOldEnPair(oldEnPair);
-				analysisDataModel.setOtherLanguagesPreviousTranslatedPair(otherLanguagesTranslatedPair);
+		readOldEnPairs(export, meta, analysisTranslationData);
+
+		for (FolderModel model : analysisTranslationData) {
+			Map<String, Map<String, String>> otherLanguagesTranslatedPair = new HashMap<String, Map<String, String>>();
+			for (Country country : Country.locals()) {
+				otherLanguagesTranslatedPair
+						.put(country.getCode(), TranslationUtil.readAllKeys(
+								model.getFolder(), country));
 			}
+			model.setOtherLanguagesPreviousTranslatedPair(otherLanguagesTranslatedPair);
 		}
 		return analysisTranslationData;
 	}
 
-	public static Map<String, String> checkFileConsistent(
-			Map<String, Map<String, String>> otherLanguagesPreviousTranslatedPair) {
-		log.log(Level.INFO,
-				"\t Checking all the locale except English if the are consistent......");
-		boolean setDefault = false;
-		String nonEnglishLocale = "";
-		Map<String, String> nonEnglishLocalePair = new HashMap<String, String>();
-		if(otherLanguagesPreviousTranslatedPair==null){
-			return nonEnglishLocalePair;
+	private static void readOldEnPairs(boolean export, MetaData meta,
+			List<FolderModel> analysisTranslationData) {
+		String commitId = export ? meta.getApplyId() : meta.getExportId();
+		if (StringUtil.isEmpty(commitId)) {
+			return;
 		}
-		for (String key : otherLanguagesPreviousTranslatedPair.keySet()) {
-			Map<String, String> pairs = otherLanguagesPreviousTranslatedPair
-					.get(key);
-			// One more language(locale_ja) in Excel while josn file
-			// locale_ja.json is not exists
-			if (!setDefault && !pairs.isEmpty()) {
-				nonEnglishLocalePair = pairs;
-				nonEnglishLocale = key;
-				setDefault = true;
-				continue;
-			}
-			if (pairs.size() < nonEnglishLocalePair.size()) {
-				log.log(Level.WARNING,
-						"Keys between different locale "
-								+ key
-								+ " and "
-								+ nonEnglishLocale
-								+ " not equals. One of these files might be modified or supported countries greater than before. Please double check.");
-				nonEnglishLocalePair = pairs;
-				nonEnglishLocale = key;
-			}
+		TranslationUtil.downloadPreviousCodes(commitId);
+		// scan previous version folder structure
+		for (FolderModel model : analysisTranslationData) {
+			Map<String, String> oldEnPair = TranslationUtil.readAllKeys(
+					model.getFolder(), Country.ENGLISH);
+			model.setOldEnPair(oldEnPair);
 		}
-		return nonEnglishLocalePair;
+		TranslationUtil.downloadLatestCodes(Configuration.GIT_URL,
+				Configuration.DEFAULT_BRANCH);
 	}
 
-	public static MetaData readExcelMetaData(String translatedSpreadsheet,
-			String metadataFile) {
-		log.log(Level.INFO, "Parsing MetaData from "+translatedSpreadsheet);
+	public static MetaData readExcelMetaData(String translatedSpreadsheet) {
+		log.log(Level.INFO, "Parsing MetaData from " + translatedSpreadsheet);
 		Workbook wb = null;
 		try {
-			wb = WorkbookFactory.create(new FileInputStream(translatedSpreadsheet));
+			wb = WorkbookFactory.create(new FileInputStream(
+					translatedSpreadsheet));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		Sheet sheet = wb.getSheet(Configuration.SHEET_METADATA_NAME);
-		if(sheet==null){
-			throw new RuntimeException("Please specify the version in the sheet "+Configuration.SHEET_METADATA_NAME +" in "+Configuration.TRANSLATED_SPREADSHEET);
+		if (sheet == null) {
+			throw new RuntimeException(
+					"Please specify the version in the sheet "
+							+ Configuration.SHEET_METADATA_NAME + " in "
+							+ Configuration.TRANSLATED_XLS);
 		}
-		Row row=null;
-		int col=0;
+		Row row = null;
+		int col = 0;
 		MetaData metaData = new MetaData();
-		for(int i=0, len = sheet.getLastRowNum();i<len;i++){
+		for (int i = 0, len = sheet.getLastRowNum(); i < len; i++) {
 			row = sheet.getRow(i);
 			String keyName = getCellValue(row.getCell(col++));
 			String value = getCellValue(row.getCell(col++));
-			if(MetaData.META_APPLY_ID.equals(keyName)){
+			if (MetaData.META_APPLY_ID.equals(keyName)) {
 				metaData.setApplyId(value);
-			}else if(MetaData.META_EXPORT_ID.equals(keyName)){
+			} else if (MetaData.META_EXPORT_ID.equals(keyName)) {
 				metaData.setExportId(value);
-			}else if(MetaData.META_CREATE_DATE.equals(keyName)){
+			} else if (MetaData.META_CREATE_DATE.equals(keyName)) {
 				metaData.setCreateDate(value);
-			}else if(MetaData.META_CREATE_BY.equals(keyName)){
+			} else if (MetaData.META_CREATE_BY.equals(keyName)) {
 				metaData.setCreatedBy(value);
 			}
 		}

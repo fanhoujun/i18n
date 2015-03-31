@@ -2,12 +2,8 @@ package storage.tools_i18n.model;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
-
-import storage.tools_i18n.util.StringUtil;
 
 public class MetaData {
-	private static Logger log = Logger.getLogger(MetaData.class.getName());
 	
 	public static final String META_EXPORT_ID="Export Id";
 	public static final String META_APPLY_ID="Apply Id";

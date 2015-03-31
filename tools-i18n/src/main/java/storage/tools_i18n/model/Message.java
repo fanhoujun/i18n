@@ -2,42 +2,41 @@ package storage.tools_i18n.model;
 
 import java.util.Map;
 
+import storage.tools_i18n.util.HashUtil;
+
 public class Message {
 	/**
-	 *  translation key
+	 * translation key
 	 */
 	private String key;
-	/**
-	 *  translated English value for the key
-	 */
+	
 	private String enVal;
 	/**
-	 * all other languages translation,  key is the Country.XXX.getCountryCode(), value is the translation
+	 * all other languages translation, key is the Country.XXX.getCountryCode(),
+	 * value is the translation
 	 */
-	private Map<String, String> languagesVal;
-	
-	/**
-	 *  current English value if modified by developer
-	 */
-	private String modifiedEnVal;
+	private Map<String, String> locals;
+
+	private String oldEnVal;
 
 	public Message() {
 	}
-	
+
 	public Message(String key, String enVal) {
 		this(key, enVal, null);
 	}
-	
-	public Message(String key, String enVal, Map<String, String> languagesVal) {
-		this(key, enVal, languagesVal, null);
+
+	public Message(String key, String enVal, Map<String, String> locals) {
+		this(key, enVal, locals, null);
 	}
 
-	public Message(String key, String enVal, Map<String, String> languagesVal, String modifiedEnVal) {
+	public Message(String key, String enVal, Map<String, String> locals,
+			String oldEnval) {
 		super();
 		this.key = key;
 		this.enVal = enVal;
-		this.languagesVal = languagesVal;
-		this.modifiedEnVal = modifiedEnVal;
+		this.locals = locals;
+		this.oldEnVal = oldEnval;
 	}
 
 	public String getKey() {
@@ -56,20 +55,24 @@ public class Message {
 		this.enVal = enVal;
 	}
 
-	public String getModifiedEnVal() {
-		return modifiedEnVal;
+	public String getOldEnVal() {
+		return oldEnVal;
 	}
 
-	public void setModifiedEnVal(String modifiedEnVal) {
-		this.modifiedEnVal = modifiedEnVal;
+	public void setOldEnVal(String modifiedEnVal) {
+		this.oldEnVal = modifiedEnVal;
 	}
 
-	public Map<String, String> getLanguagesVal() {
-		return languagesVal;
+	public Map<String, String> getLocals() {
+		return locals;
 	}
 
-	public void setLanguagesVal(Map<String, String> languagesVal) {
-		this.languagesVal = languagesVal;
+	public void setLocals(Map<String, String> locals) {
+		this.locals = locals;
+	}
+
+	public boolean isChanged() {
+		return HashUtil.isEqual(this.getEnVal(), this.getOldEnVal());
 	}
 
 }
