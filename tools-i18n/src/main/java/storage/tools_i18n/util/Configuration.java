@@ -31,7 +31,7 @@ public class Configuration {
 	public static final int LANGUAGE_ROW_NUM = 0;
 
 	public static final int KEY_COLUMN_NUM = 0;
-
+	
 	public static void init(String[] args) {
 		String proj;
 		if (args.length > 0) {

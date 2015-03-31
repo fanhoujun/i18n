@@ -1,6 +1,6 @@
 package storage.tools_i18n.model;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class MetaData {
@@ -48,7 +48,7 @@ public class MetaData {
 		this.createdBy = createdBy;
 	}
 	public Map<String, String> converToMap(){
-		Map<String, String> map = new HashMap<String, String>();
+		Map<String, String> map = new LinkedHashMap<String, String>();
 		map.put(META_CREATE_DATE, this.createDate);
 		// update metadata.json field commit id with workspace commit id
 		map.put(META_APPLY_ID, this.applyId);

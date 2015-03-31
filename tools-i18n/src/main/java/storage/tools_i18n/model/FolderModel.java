@@ -55,13 +55,8 @@ public class FolderModel {
 		this.oldEnPair = oldEnPair;
 	}
 
-	public Map<String, Map<String, String>> getOtherLanguagesPreviousTranslatedPair() {
-		return allLocals;
-	}
-
-	public void setOtherLanguagesPreviousTranslatedPair(
-			Map<String, Map<String, String>> otherLanguagesPreviousTranslatedPair) {
-		this.allLocals = otherLanguagesPreviousTranslatedPair;
+	public void setAllLocals(Map<String, Map<String, String>> allLocals) {
+		this.allLocals = allLocals;
 	}
 
 	/**
