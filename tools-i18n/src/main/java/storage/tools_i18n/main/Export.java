@@ -9,7 +9,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.poi.ss.usermodel.IndexedColors;
@@ -24,8 +23,8 @@ import storage.tools_i18n.model.MetaData;
 import storage.tools_i18n.model.SheetModel;
 import storage.tools_i18n.util.Configuration;
 import storage.tools_i18n.util.ExcelUtil;
-import storage.tools_i18n.util.StringUtil;
 import storage.tools_i18n.util.ResourceUtil;
+import storage.tools_i18n.util.StringUtil;
 
 public class Export {
 	private static Logger log = Logger.getLogger(Export.class.getName());
@@ -70,7 +69,7 @@ public class Export {
 	 */
 	public static void export(String outputFilePath, List<SheetModel> models,
 			MetaData excelMetaData) {
-		log.log(Level.INFO, StringUtil.DELIMETER + "Generating spreadsheet "
+		log.info(StringUtil.DELIMETER + "Generating spreadsheet "
 				+ outputFilePath + "......");
 		Workbook workbook = new XSSFWorkbook();
 

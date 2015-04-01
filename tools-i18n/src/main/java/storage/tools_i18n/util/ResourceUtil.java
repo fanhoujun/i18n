@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -43,10 +42,9 @@ public class ResourceUtil {
 	 * @throws InvalidRemoteException
 	 */
 	public static void downloadPreviousCodes(String commitId) {
-		log.log(Level.INFO,
-				StringUtil.DELIMETER
-						+ "Start donwloading previous applied translations version[commitId="
-						+ commitId + "]");
+		log.info(StringUtil.DELIMETER
+				+ "Start donwloading previous applied translations version[commitId="
+				+ commitId + "]");
 		checkoutProject(Configuration.GIT_URL, commitId);
 	}
 
@@ -61,13 +59,12 @@ public class ResourceUtil {
 	public static MetaData downloadLatestCodes(String repoURL, String branchName) {
 		String metadataFilePath = null;
 		File metadataFile = null;
-		log.log(Level.INFO, StringUtil.DELIMETER + "Donwloading...");
+		log.info(StringUtil.DELIMETER + "Donwloading...");
 		MetaData metadata = new MetaData();
 		metadata.setWorkspaceCommitId(checkoutProject(repoURL, branchName));
-		log.log(Level.INFO,
-				StringUtil.DELIMETER + "Donwloaded HEAD version[commitId="
-						+ metadata.getWorkspaceCommitId() + "] from " + repoURL
-						+ "[branch=" + branchName + "]");
+		log.info(StringUtil.DELIMETER + "Donwloaded HEAD version[commitId="
+				+ metadata.getWorkspaceCommitId() + "] from " + repoURL
+				+ "[branch=" + branchName + "]");
 		List<String> files = scanJsonFolders(repoURL,
 				Configuration.METADATA_FILE);
 		if (files.size() > 0) {
@@ -111,7 +108,7 @@ public class ResourceUtil {
 		if (result.isEmpty()) {
 			sb.append("\t" + jsonFilePath + " is empty");
 		}
-		log.log(Level.INFO, sb.toString());
+		log.info(sb.toString());
 		return result;
 	}
 
@@ -154,7 +151,7 @@ public class ResourceUtil {
 	 */
 	public static List<String> scanJsonFolders(String rootFolder,
 			String fileName) {
-		log.log(Level.INFO, StringUtil.DELIMETER + "Searching...");
+		log.info(StringUtil.DELIMETER + "Searching...");
 		List<String> folderPaths = new ArrayList<String>();
 		traverseFileInDirectory(rootFolder, fileName, folderPaths);
 
@@ -182,7 +179,7 @@ public class ResourceUtil {
 		}
 		sb.append(StringUtil.DELIMETER + "End searching folders. "
 				+ folderPaths.size() + " folders found.\n");
-		log.log(Level.INFO, sb.toString());
+		log.info(sb.toString());
 		return folderPaths;
 	}
 
@@ -208,7 +205,7 @@ public class ResourceUtil {
 	 */
 	public static void generateJsonFile(Map<String, String> pairs,
 			String jsonFilePath) {
-		log.log(Level.INFO, StringUtil.DELIMETER + "Generating " + jsonFilePath);
+		log.info(StringUtil.DELIMETER + "Generating " + jsonFilePath);
 		JSONObject json = new JSONObject();
 		for (Entry<String, String> entry : pairs.entrySet()) {
 			String key = entry.getKey();
@@ -246,7 +243,7 @@ public class ResourceUtil {
 		}
 		File repo = new File(repoURL);
 		if (!repo.exists() || repo.listFiles().length <= 0) {
-			log.log(Level.SEVERE, "Can not find the Git repo: " + repoURL);
+			log.severe("Can not find the Git repo: " + repoURL);
 			throw new RuntimeException("Can not find the Git repo: " + repoURL);
 		}
 
@@ -254,7 +251,7 @@ public class ResourceUtil {
 		try {
 			git = Git.open(repo);
 		} catch (IOException e) {
-			log.log(Level.SEVERE, "Open repo failed! Error: " + e);
+			log.severe("Open repo failed! Error: " + e);
 			throw new RuntimeException("Open repo failed! Error: " + e);
 		}
 
@@ -265,7 +262,7 @@ public class ResourceUtil {
 			try {
 				cc.call();
 			} catch (Exception e) {
-				log.log(Level.SEVERE, "Checkout failed! Error: " + e);
+				log.severe("Checkout failed! Error: " + e);
 				throw new RuntimeException("Checkout failed! Error: " + e);
 			}
 		}
@@ -277,7 +274,7 @@ public class ResourceUtil {
 			RevCommit rc = logs.iterator().next();
 			commitId = rc.getName();
 		} catch (Exception e) {
-			log.log(Level.SEVERE, "Get commit ID failed! Error: " + e);
+			log.severe("Get commit ID failed! Error: " + e);
 			throw new RuntimeException("Get commit ID failed! Error: " + e);
 		}
 		return commitId;

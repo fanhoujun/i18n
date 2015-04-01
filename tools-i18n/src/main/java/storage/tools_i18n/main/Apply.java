@@ -1,7 +1,6 @@
 package storage.tools_i18n.main;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -24,6 +23,7 @@ import storage.tools_i18n.util.ResourceUtil;
 import storage.tools_i18n.util.StringUtil;
 
 public class Apply {
+	
 	private static Logger log = Logger.getLogger(Apply.class.getName());
 
 	public static void main(String[] args) {
@@ -57,19 +57,14 @@ public class Apply {
 	}
 
 	/**
-	 * 
-	 * @param excelFilePath
-	 *            excel file path including file name
-	 * @param sheetName
-	 * @return map Map<language, Map<keys, values>>
+	 * @return (sheetName,Messages)
 	 */
 	private static Map<String, List<Message>> readTranslations() {
 		Map<String, List<Message>> modulesTranslated = new LinkedHashMap<String, List<Message>>();
 
 		Workbook wb = null;
 		try {
-			wb = WorkbookFactory.create(new FileInputStream(
-					Configuration.TRANSLATED_XLS));
+			wb = WorkbookFactory.create(new File(Configuration.TRANSLATED_XLS));
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -159,8 +154,7 @@ public class Apply {
 		log.info("Parsing MetaData from " + translatedSpreadsheet);
 		Workbook wb = null;
 		try {
-			wb = WorkbookFactory.create(new FileInputStream(
-					translatedSpreadsheet));
+			wb = WorkbookFactory.create(new File(translatedSpreadsheet));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -171,11 +165,10 @@ public class Apply {
 							+ Configuration.SHEET_METADATA_NAME + " in "
 							+ Configuration.TRANSLATED_XLS);
 		}
-		Row row = null;
 		int col = 0;
 		MetaData metaData = new MetaData();
 		for (int i = 0, len = sheet.getLastRowNum(); i < len; i++) {
-			row = sheet.getRow(i);
+			Row row = sheet.getRow(i);
 			String keyName = getCellValue(row.getCell(col++));
 			String value = getCellValue(row.getCell(col++));
 			if (MetaData.META_APPLY_ID.equals(keyName)) {
@@ -196,7 +189,7 @@ public class Apply {
 		String folder = model.getFolder();
 		log.info("apply folder " + folder + "...");
 		Map<String, String> readyEnPairs = new LinkedHashMap();
-
+		List<String> confilictKeys = new ArrayList();
 		for (Map.Entry<String, String> me : model.getEnglishPair().entrySet()) {
 			String key = me.getKey();
 			String oldEnVal = model.getOldEnPair().get(key);
@@ -208,7 +201,10 @@ public class Apply {
 					readyEnPairs.put(key, message.getEnVal());
 				}
 			} else {
-				log.warning("Engilish value was changed:");
+				readyEnPairs.put(key, me.getValue());
+				confilictKeys.add(key);
+
+				log.warning("Engilish value was changed, all local translations of these keys will be ignored:");
 				log.warning("\tKey=" + key);
 				log.warning("\tCurrent value=" + me.getValue());
 				log.warning("\tOld value=" + model.getOldEnPair());
@@ -224,7 +220,10 @@ public class Apply {
 		for (Country country : Country.locals()) {
 			Map<String, String> readyPairs = new LinkedHashMap();
 			for (String key : readyEnPairs.keySet()) {
-				String local = getLocal(translations, country, key);
+				String local = null;
+				if (!confilictKeys.contains(key)) {
+					local = getLocal(translations, country, key);
+				}
 				if (StringUtil.isEmpty(local)) {
 					local = model.getLocal(key, country.getCode());
 				}
