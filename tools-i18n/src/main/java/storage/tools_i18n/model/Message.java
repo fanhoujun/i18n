@@ -9,7 +9,7 @@ public class Message {
 	 * translation key
 	 */
 	private String key;
-	
+
 	private String enVal;
 	/**
 	 * all other languages translation, key is the Country.XXX.getCountryCode(),
@@ -73,6 +73,14 @@ public class Message {
 
 	public boolean isChanged() {
 		return HashUtil.isEqual(this.getEnVal(), this.getOldEnVal());
+	}
+
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("key=").append(key).append(" enVal=").append(enVal)
+				.append(" oldEnVal=").append(oldEnVal).append("\nlocals=")
+				.append(locals).append("\n");
+		return sb.toString();
 	}
 
 }

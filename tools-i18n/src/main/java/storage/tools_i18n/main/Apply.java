@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.poi.ss.usermodel.Cell;
@@ -21,8 +20,8 @@ import storage.tools_i18n.model.FolderModel;
 import storage.tools_i18n.model.Message;
 import storage.tools_i18n.model.MetaData;
 import storage.tools_i18n.util.Configuration;
-import storage.tools_i18n.util.StringUtil;
 import storage.tools_i18n.util.ResourceUtil;
+import storage.tools_i18n.util.StringUtil;
 
 public class Apply {
 	private static Logger log = Logger.getLogger(Apply.class.getName());
@@ -31,7 +30,7 @@ public class Apply {
 		Configuration.init(args);
 		MetaData xlsMeta = readExcelMetaData(Configuration.TRANSLATED_XLS);
 		if (StringUtil.isEmpty(xlsMeta.getExportId())) {
-			log.warning("No Export ID was found in the file:"
+			log.severe("No Export ID was found in the file:"
 					+ Configuration.TRANSLATED_XLS);
 			return;
 		}
@@ -39,7 +38,7 @@ public class Apply {
 				Configuration.DEFAULT_BRANCH);
 
 		if (!xlsMeta.getExportId().equals(meta.getExportId())) {
-			log.warning("Export ID:" + xlsMeta.getExportId() + " in the file:"
+			log.severe("Export ID:" + xlsMeta.getExportId() + " in the file:"
 					+ Configuration.TRANSLATED_XLS
 					+ " does not match with Export ID:" + meta.getExportId());
 			return;
@@ -81,7 +80,7 @@ public class Apply {
 			if (Configuration.SHEET_METADATA_NAME.equals(sheetName)) {
 				continue;
 			}
-			log.log(Level.INFO, "Parsing modules " + sheetName + "...");
+			log.info("Parsing modules " + sheetName + "...");
 
 			List<Message> allTranslatedMessages = new ArrayList<Message>();
 			Map<String, Integer> languageColumeMap = new LinkedHashMap<String, Integer>();
@@ -97,9 +96,8 @@ public class Apply {
 				}
 			}
 			if (languageColumeMap.size() != Country.values().size()) {
-				log.log(Level.SEVERE,
-						"Country Name defined in Country.java not match names in the spreadsheet at row#"
-								+ (Configuration.LANGUAGE_ROW_NUM + 1));
+				log.severe("Country Name defined in Country.java not match names in the spreadsheet at row#"
+						+ (Configuration.LANGUAGE_ROW_NUM + 1));
 			}
 			sheet.setColumnWidth(Configuration.KEY_COLUMN_NUM, 0x24);
 			for (int i = Configuration.LANGUAGE_ROW_NUM + 1, len = sheet
@@ -110,12 +108,8 @@ public class Apply {
 				}
 				Cell cell = row.getCell(Configuration.KEY_COLUMN_NUM);
 				String key = getCellValue(cell);
-				if (StringUtil.isEmpty(key)
-						|| Configuration.MODIFIED_EXCEL_TITLE.equals(key)
-						|| Configuration.NEW_EXCEL_TITLE.equals(key)
-						|| Configuration.NO_CHANGE_EXCEL_TITLE.equals(key)
-						|| Configuration.DELETED_EXCEL_TITLE.equals(key)) {
-					break;
+				if (StringUtil.isEmpty(key)) {
+					continue;
 				}
 				Message message = new Message();
 				message.setKey(key);
@@ -131,7 +125,7 @@ public class Apply {
 				allTranslatedMessages.add(message);
 			}
 			sheet.setColumnWidth(Configuration.KEY_COLUMN_NUM, 0);
-			log.log(Level.INFO, allTranslatedMessages.size()
+			log.info(allTranslatedMessages.size()
 					+ " translated messages founded in module " + sheetName);
 			modulesTranslated.put(sheetName, allTranslatedMessages);
 		}
@@ -162,7 +156,7 @@ public class Apply {
 	}
 
 	private static MetaData readExcelMetaData(String translatedSpreadsheet) {
-		log.log(Level.INFO, "Parsing MetaData from " + translatedSpreadsheet);
+		log.info("Parsing MetaData from " + translatedSpreadsheet);
 		Workbook wb = null;
 		try {
 			wb = WorkbookFactory.create(new FileInputStream(

@@ -49,11 +49,12 @@ public class ExcelUtil {
 
 		Row row = sheet.createRow(rowNum++);
 		int col = 0;
+		setCell(row.createCell(col++), null, style);
 		setCell(row.createCell(col++), title, style);
 		for (int i = 0; i < Country.locals().size() + 2; i++) {
 			setCell(row.createCell(col++), "", style);
 		}
-		sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 0,
+		sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 1,
 				Country.locals().size() + 1));
 		return rowNum;
 	}
