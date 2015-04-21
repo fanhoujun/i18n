@@ -23,7 +23,7 @@ import storage.tools_i18n.util.ResourceUtil;
 import storage.tools_i18n.util.StringUtil;
 
 public class Apply {
-	
+
 	private static Logger log = Logger.getLogger(Apply.class.getName());
 
 	public static void main(String[] args) {
@@ -240,20 +240,22 @@ public class Apply {
 
 	private static String getLocal(List<Message> translations, Country country,
 			String key) {
-		for (Message msg : translations) {
-			if (key.equals(msg.getKey())) {
-				return msg.getLocals().get(country.getCode());
+		if (translations != null)
+			for (Message msg : translations) {
+				if (key.equals(msg.getKey())) {
+					return msg.getLocals().get(country.getCode());
+				}
 			}
-		}
 		return null;
 	}
 
 	private static Message getMessage(List<Message> translations, String key) {
-		for (Message msg : translations) {
-			if (key.equals(msg.getKey())) {
-				return msg;
+		if (translations != null)
+			for (Message msg : translations) {
+				if (key.equals(msg.getKey())) {
+					return msg;
+				}
 			}
-		}
 		return null;
 	}
 }
