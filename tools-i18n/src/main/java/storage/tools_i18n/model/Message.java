@@ -72,7 +72,7 @@ public class Message {
 	}
 
 	public boolean isChanged() {
-		return HashUtil.isEqual(this.getEnVal(), this.getOldEnVal());
+		return !HashUtil.isEqual(this.getEnVal(), this.getOldEnVal());
 	}
 
 	public String toString() {
