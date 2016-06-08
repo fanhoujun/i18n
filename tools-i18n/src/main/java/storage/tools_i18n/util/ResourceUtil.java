@@ -3,6 +3,7 @@ package storage.tools_i18n.util;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -14,10 +15,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import net.sf.json.JSONException;
-import net.sf.json.JSONNull;
-import net.sf.json.JSONObject;
-
 import org.eclipse.jgit.api.CheckoutCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -25,6 +22,9 @@ import org.eclipse.jgit.api.errors.InvalidRemoteException;
 import org.eclipse.jgit.api.errors.TransportException;
 import org.eclipse.jgit.revwalk.RevCommit;
 
+import net.sf.json.JSONException;
+import net.sf.json.JSONNull;
+import net.sf.json.JSONObject;
 import storage.tools_i18n.model.Country;
 import storage.tools_i18n.model.FolderModel;
 import storage.tools_i18n.model.MetaData;
@@ -42,9 +42,8 @@ public class ResourceUtil {
 	 * @throws InvalidRemoteException
 	 */
 	public static void downloadPreviousCodes(String commitId) {
-		log.info(StringUtil.DELIMETER
-				+ "Start donwloading previous applied translations version[commitId="
-				+ commitId + "]");
+		log.info(StringUtil.DELIMETER + "Start donwloading previous applied translations version[commitId=" + commitId
+				+ "]");
 		checkoutProject(Configuration.GIT_URL, commitId);
 	}
 
@@ -62,14 +61,11 @@ public class ResourceUtil {
 		log.info(StringUtil.DELIMETER + "Donwloading...");
 		MetaData metadata = new MetaData();
 		metadata.setWorkspaceCommitId(checkoutProject(repoURL, branchName));
-		log.info(StringUtil.DELIMETER + "Donwloaded HEAD version[commitId="
-				+ metadata.getWorkspaceCommitId() + "] from " + repoURL
-				+ "[branch=" + branchName + "]");
-		List<String> files = scanJsonFolders(repoURL,
-				Configuration.METADATA_FILE);
+		log.info(StringUtil.DELIMETER + "Donwloaded HEAD version[commitId=" + metadata.getWorkspaceCommitId()
+				+ "] from " + repoURL + "[branch=" + branchName + "]");
+		List<String> files = scanJsonFolders(repoURL, Configuration.METADATA_FILE);
 		if (files.size() > 0) {
-			metadataFilePath = files.get(0) + File.separator
-					+ Configuration.METADATA_FILE;
+			metadataFilePath = files.get(0) + File.separator + Configuration.METADATA_FILE;
 			metadataFile = new File(metadataFilePath);
 		}
 		if (metadataFilePath != null && metadataFile.exists()) {
@@ -102,8 +98,7 @@ public class ResourceUtil {
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
-		StringBuffer sb = new StringBuffer(StringUtil.DELIMETER
-				+ "Parsing file: ");
+		StringBuffer sb = new StringBuffer(StringUtil.DELIMETER + "Parsing file: ");
 		sb.append(jsonFilePath);
 		if (result.isEmpty()) {
 			sb.append("\t" + jsonFilePath + " is empty");
@@ -112,8 +107,7 @@ public class ResourceUtil {
 		return result;
 	}
 
-	private static void parseJsonObjectToMap(JSONObject obj, String keyStr,
-			Map<String, String> map) {
+	private static void parseJsonObjectToMap(JSONObject obj, String keyStr, Map<String, String> map) {
 		Iterator iterator = obj.keys();
 		while (iterator.hasNext()) {
 			String key = (String) iterator.next();
@@ -149,8 +143,7 @@ public class ResourceUtil {
 	 * @param rootFolder
 	 * @return
 	 */
-	public static List<String> scanJsonFolders(String rootFolder,
-			String fileName) {
+	public static List<String> scanJsonFolders(String rootFolder, String fileName) {
 		log.info(StringUtil.DELIMETER + "Searching...");
 		List<String> folderPaths = new ArrayList<String>();
 		traverseFileInDirectory(rootFolder, fileName, folderPaths);
@@ -172,19 +165,16 @@ public class ResourceUtil {
 			}
 		}
 		StringBuffer sb = new StringBuffer("\nSearching file ");
-		sb.append(fileName).append(" in folder ").append(rootFolder)
-				.append("\n");
+		sb.append(fileName).append(" in folder ").append(rootFolder).append("\n");
 		for (String path : folderPaths) {
 			sb.append("\t" + path + File.separator + fileName + "\n");
 		}
-		sb.append(StringUtil.DELIMETER + "End searching folders. "
-				+ folderPaths.size() + " folders found.\n");
+		sb.append(StringUtil.DELIMETER + "End searching folders. " + folderPaths.size() + " folders found.\n");
 		log.info(sb.toString());
 		return folderPaths;
 	}
 
-	private static void traverseFileInDirectory(String filePath,
-			String fileName, List<String> folderPaths) {
+	private static void traverseFileInDirectory(String filePath, String fileName, List<String> folderPaths) {
 		File pFile = new File(filePath);
 		File[] files = pFile.listFiles();
 		for (File file : files) {
@@ -203,26 +193,35 @@ public class ResourceUtil {
 	 * @param pairs
 	 * @param jsonFilePath
 	 */
-	public static void generateJsonFile(Map<String, String> pairs,
-			String jsonFilePath) {
+	public static void generateJsonFile(Map<String, String> pairs, String jsonFilePath) {
 		log.info(StringUtil.DELIMETER + "Generating " + jsonFilePath);
 		JSONObject json = new JSONObject();
 		for (Entry<String, String> entry : pairs.entrySet()) {
 			String key = entry.getKey();
-			String[] splittedKey = key.split("\\.");
-			JSONObject nestedObject = json;
-
-			for (int i = 0; i < splittedKey.length - 1; i++) {
-				if (!nestedObject.has(splittedKey[i])) {
-					nestedObject.accumulate(splittedKey[i], new JSONObject());
-				}
-				nestedObject = nestedObject.getJSONObject(splittedKey[i]);
-			}
-			nestedObject.accumulate(splittedKey[splittedKey.length - 1],
-					entry.getValue());
+			json.accumulate(key, entry.getValue());
 		}
 		IoUtil.write(json.toString(4), new File(jsonFilePath));
 	}
+	// public static void generateJsonFile(Map<String, String> pairs,
+	// String jsonFilePath) {
+	// log.info(StringUtil.DELIMETER + "Generating " + jsonFilePath);
+	// JSONObject json = new JSONObject();
+	// for (Entry<String, String> entry : pairs.entrySet()) {
+	// String key = entry.getKey();
+	// String[] splittedKey = key.split("\\.");
+	// JSONObject nestedObject = json;
+	//
+	// for (int i = 0; i < splittedKey.length - 1; i++) {
+	// if (!nestedObject.has(splittedKey[i])) {
+	// nestedObject.accumulate(splittedKey[i], new JSONObject());
+	// }
+	// nestedObject = nestedObject.getJSONObject(splittedKey[i]);
+	// }
+	// nestedObject.accumulate(splittedKey[splittedKey.length - 1],
+	// entry.getValue());
+	// }
+	// IoUtil.write(json.toString(4), new File(jsonFilePath));
+	// }
 
 	/**
 	 * Clone a Git repo to a specified path and checkout to a specified branch
@@ -282,16 +281,14 @@ public class ResourceUtil {
 
 	public static List<FolderModel> loadFolders() {
 		// scan current version folder structure
-		List<String> jsonFolders = ResourceUtil.scanJsonFolders(
-				Configuration.GIT_URL, Country.ENGLISH.getCode());
+		List<String> jsonFolders = ResourceUtil.scanJsonFolders(Configuration.GIT_URL, Country.ENGLISH.getCode());
 
 		List<FolderModel> folders = new ArrayList();
 		Set<String> currentModules = new HashSet<String>();
 		// read current version English data
 		for (String jsonFolder : jsonFolders) {
 			currentModules.add(jsonFolder);
-			Map<String, String> englishPair = ResourceUtil.readKeys(jsonFolder,
-					Country.ENGLISH);
+			Map<String, String> englishPair = ResourceUtil.readKeys(jsonFolder, Country.ENGLISH);
 			FolderModel folderModel = new FolderModel();
 			folderModel.setEnglishPair(englishPair);
 			// avoid NullPointerException
@@ -300,21 +297,41 @@ public class ResourceUtil {
 			folders.add(folderModel);
 		}
 		if (currentModules.size() != jsonFolders.size()) {
-			log.warning("Module name duplicated after simplified, Please modify the configuration \"IGNORE_KEY_WRODS\" in the properties file and run this tool again."
-					+ "If it not works, please delete the keywords and run this tool again, thanks.");
+			log.warning(
+					"Module name duplicated after simplified, Please modify the configuration \"IGNORE_KEY_WRODS\" in the properties file and run this tool again."
+							+ "If it not works, please delete the keywords and run this tool again, thanks.");
 		}
 		// if applied translation before, download the last applied version
 
 		for (FolderModel model : folders) {
 			Map<String, Map<String, String>> allLocals = new LinkedHashMap<String, Map<String, String>>();
 			for (Country country : Country.locals()) {
-				Map<String, String> values = ResourceUtil.readKeys(
-						model.getFolder(), country);
+
+				Map<String, String> values;
+				if (model.getFolder().endsWith("common")) {
+					values = getAllValues(folders, country);
+				} else {
+					values = ResourceUtil.readKeys(model.getFolder(), country);
+				}
 				allLocals.put(country.getCode(), values);
 			}
 			model.setAllLocals(allLocals);
 		}
 		return folders;
+	}
+
+	private static Map<String, String> getAllValues(List<FolderModel> folders, Country country) {
+		Map<String, String> values = new HashMap();
+		Map<String, String> commonValues = null;
+		for (FolderModel model : folders) {
+			if (!model.getFolder().endsWith("common")) {
+				values.putAll(ResourceUtil.readKeys(model.getFolder(), country));
+			} else {
+				commonValues = ResourceUtil.readKeys(model.getFolder(), country);
+			}
+		}
+		values.putAll(commonValues);
+		return values;
 	}
 
 	public static void readOldEnPairs(String commitId, List<FolderModel> modles) {
@@ -324,12 +341,10 @@ public class ResourceUtil {
 		ResourceUtil.downloadPreviousCodes(commitId);
 		// scan previous version folder structure
 		for (FolderModel model : modles) {
-			Map<String, String> oldEnPair = ResourceUtil.readKeys(
-					model.getFolder(), Country.ENGLISH);
+			Map<String, String> oldEnPair = ResourceUtil.readKeys(model.getFolder(), Country.ENGLISH);
 			model.setOldEnPair(oldEnPair);
 		}
-		ResourceUtil.downloadLatestCodes(Configuration.GIT_URL,
-				Configuration.DEFAULT_BRANCH);
+		ResourceUtil.downloadLatestCodes(Configuration.GIT_URL, Configuration.DEFAULT_BRANCH);
 	}
 
 }
