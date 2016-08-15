@@ -41,6 +41,11 @@ public class ExcelUtil {
 		col = 0;
 		setCell(row.createCell(col++), MetaData.META_CREATE_DATE, style);
 		setCell(row.createCell(col++), metadata.getCreateDate(), style);
+		
+		row = sheet.createRow(rowNum++);
+		col = 0;
+		setCell(row.createCell(col++), "Branch", style);
+		setCell(row.createCell(col++), Configuration.DEFAULT_BRANCH, style);
 
 	}
 
